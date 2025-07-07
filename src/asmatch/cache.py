@@ -11,7 +11,8 @@ from .models import Snippet
 
 logger = logging.getLogger(__name__)
 
-CACHE_DIR = os.path.expanduser("~/.cache/asmatch")
+DEFAULT_CACHE_DIR = os.path.expanduser("~/.cache/asmatch")
+CACHE_DIR = os.path.expanduser(os.environ.get("ASMATCH_CACHE_DIR", DEFAULT_CACHE_DIR))
 DB_CHECKSUM_PATH = os.path.join(CACHE_DIR, "db_checksum.txt")
 
 

@@ -29,18 +29,22 @@ class TestCLI(unittest.TestCase):
         """Clean up the database after each test."""
         os.remove(self.db_name)
 
-    def run_command(self, command):
+    def run_command(self, command, extra_env=None):
         """Helper function to run a command and return the output."""
+        env = {
+            **os.environ,
+            "PYTHONPATH": os.path.join(os.getcwd(), "src"),
+            "DATABASE_URL": f"sqlite:///{self.db_name}",
+        }
+        if extra_env:
+            env.update(extra_env)
+
         result = subprocess.run(
             ["python", "-m", "asmatch.cli", *shlex.split(command)],
             shell=False,
             capture_output=True,
             text=True,
-            env={
-                **os.environ,
-                "PYTHONPATH": os.path.join(os.getcwd(), "src"),
-                "DATABASE_URL": f"sqlite:///{self.db_name}",
-            },
+            env=env,
             check=False,
         )
         return result
@@ -107,8 +111,40 @@ class TestCLI(unittest.TestCase):
             with open(config_path, "rb") as f:
                 data = tomli.load(f)
 
-            self.assertEqual(data.get("lsh_threshold"), 0.7)
-            self.assertEqual(data.get("top_n"), 10)
+        self.assertEqual(data.get("lsh_threshold"), 0.7)
+        self.assertEqual(data.get("top_n"), 10)
+
+    def test_config_dir_env_override(self):
+        """ASMATCH_CONFIG_DIR should override the default config path."""
+        with tempfile.TemporaryDirectory() as cfgdir:
+            result = self.run_command(
+                "config set top_n 7",
+                extra_env={"ASMATCH_CONFIG_DIR": cfgdir},
+            )
+            self.assertEqual(result.returncode, 0)
+
+            config_path = os.path.join(cfgdir, "config.toml")
+            with open(config_path, "rb") as f:
+                data = tomli.load(f)
+
+            self.assertEqual(data.get("top_n"), 7)
+
+            result = self.run_command(
+                "config path",
+                extra_env={"ASMATCH_CONFIG_DIR": cfgdir},
+            )
+            self.assertIn(config_path, result.stdout)
+
+    def test_cache_dir_env_override(self):
+        """ASMATCH_CACHE_DIR should control where cache files are stored."""
+        with tempfile.TemporaryDirectory() as cache_dir:
+            result = self.run_command(
+                "find --query 'MOV EAX, 1'",
+                extra_env={"ASMATCH_CACHE_DIR": cache_dir},
+            )
+            self.assertEqual(result.returncode, 0)
+            cache_file = os.path.join(cache_dir, "lsh_0.50.pkl")
+            self.assertTrue(os.path.exists(cache_file))
     def test_quiet_option(self):
         """Test that --quiet suppresses informational output."""
         result = self.run_command("--quiet stats")
