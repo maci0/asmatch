@@ -96,7 +96,8 @@ You can manage this file with the `asmatch config` command.
 
 ### 3. Usage
 
-`asmatch` provides a streamlined, action-oriented interface.
+The CLI can be invoked directly with `asmatch` or by running `python -m asmatch`.
+It provides a streamlined, action-oriented interface.
 
 **Examples:**
 ```bash
@@ -122,6 +123,8 @@ asmatch compare <checksum1> <checksum2>
 For a detailed breakdown of all commands and features, see the [User Stories](./docs/user_stories.md) or run:
 ```bash
 asmatch --help
+# or
+python -m asmatch --help
 ```
 
 ### 4. Running Tests
