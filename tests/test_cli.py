@@ -91,7 +91,15 @@ class TestCLI(unittest.TestCase):
                 "HOME": home,
             }
             result = subprocess.run(
-                ["python", "-m", "asmatch.cli", "config", "set", "lsh_threshold", "0.7"],
+                [
+                    "python",
+                    "-m",
+                    "asmatch.cli",
+                    "config",
+                    "set",
+                    "lsh_threshold",
+                    "0.7",
+                ],
                 capture_output=True,
                 text=True,
                 env=env,
@@ -114,6 +122,7 @@ class TestCLI(unittest.TestCase):
 
             self.assertEqual(data.get("lsh_threshold"), 0.7)
             self.assertEqual(data.get("top_n"), 10)
+
     def test_quiet_option(self):
         """Test that --quiet suppresses informational output."""
         result = self.run_command("--quiet stats")
