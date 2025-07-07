@@ -18,11 +18,15 @@ def get_lsh_cache_path(threshold: float) -> str:
 
 def get_db_checksum(session: Session) -> str:
     """Return a checksum representing the current database state."""
-    count = session.exec(select(func.count(Snippet.checksum))).one()
+    # Pylint mis-identifies `func.count` as non-callable in SQLModel
+    count = session.exec(select(func.count(Snippet.checksum))).one()  # pylint: disable=not-callable
     if count == 0:
         return "empty"
 
-    last_snippet = session.exec(select(Snippet).order_by(Snippet.checksum.desc())).first()
+    # `desc` is a SQLAlchemy method generated at runtime
+    last_snippet = session.exec(
+        select(Snippet).order_by(Snippet.checksum.desc())  # pylint: disable=no-member
+    ).first()
     return f"{count}-{last_snippet.checksum}"
 
 def build_lsh_index(session: Session, threshold: float, num_perm: int) -> MinHashLSH:
