@@ -77,7 +77,14 @@ pip install -e .
 
 ### 2. Configuration
 
-You can create a configuration file at `~/.config/asmatch/config.toml` to set default values.
+You can create a configuration file at `~/.config/asmatch/config.toml` to set
+default values.
+
+| Key               | Default | Description |
+|-------------------|--------:|-------------|
+| `lsh_threshold`   | `0.2`   | Minimum Jaccard similarity used when querying the LSH index. Lower values yield more candidates. |
+| `num_permutations`| `128`   | Number of permutations used when building MinHash fingerprints. |
+| `top_n`           | `3`     | Number of matches returned by the `find` command. |
 
 **Example `config.toml`:**
 ```toml
