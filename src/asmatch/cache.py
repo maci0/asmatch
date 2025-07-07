@@ -2,11 +2,14 @@
 
 import os
 import pickle
+import logging
 
 from datasketch import MinHashLSH
 from sqlmodel import Session, func, select
 
 from .models import Snippet
+
+logger = logging.getLogger(__name__)
 
 CACHE_DIR = os.path.expanduser("~/.cache/asmatch")
 DB_CHECKSUM_PATH = os.path.join(CACHE_DIR, "db_checksum.txt")
@@ -36,11 +39,12 @@ def build_lsh_index(session: Session, threshold: float, num_perm: int) -> MinHas
     try:
         lsh = MinHashLSH(threshold=threshold, num_perm=num_perm)
     except ValueError as e:
-        print(
-            f"Error: Invalid LSH parameters. The threshold ({threshold}) may be "
-            f"too high for the number of permutations ({num_perm})."
+        logger.error(
+            "Error: Invalid LSH parameters. The threshold (%s) may be too high for the number of permutations (%s).",
+            threshold,
+            num_perm,
         )
-        print(f"  -> Original error: {e}")
+        logger.error("  -> Original error: %s", e)
         return None
 
     snippets = Snippet.get_all(session)
