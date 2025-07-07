@@ -97,14 +97,25 @@ def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
     minhash_obj = code_to_minhash(code)
     minhash_bytes = pickle.dumps(minhash_obj)
 
-    new_snippet = Snippet(checksum=checksum, names=json.dumps([name]), code=code, minhash=minhash_bytes)
+    new_snippet = Snippet(
+        checksum=checksum,
+        names=json.dumps([name]),
+        code=code,
+        minhash=minhash_bytes,
+    )
     session.add(new_snippet)
     session.commit()
     session.refresh(new_snippet)
     invalidate_lsh_cache()
     return new_snippet
 
-def find_matches(session: Session, query_string: str, top_n: int = 3, threshold: float = None, normalize: bool = True):
+def find_matches(
+    session: Session,
+    query_string: str,
+    top_n: int = 3,
+    threshold: float | None = None,
+    normalize: bool = True,
+):
     """Find and rank matches for a query string."""
     if threshold is None:
         threshold = LSH_THRESHOLD
@@ -168,10 +179,12 @@ def delete_snippet(session: Session, name: str, quiet: bool = False):
     invalidate_lsh_cache()
     return True
 
-def update_snippet(session: Session, name: str, new_code: str):
-    """Do nothing; this function is deprecated."""
-    print("Warning: 'update snippet' is deprecated. Use create and delete for alias management.")
-    return None
+def update_snippet(_session: Session, _name: str, _new_code: str):
+    """Deprecated no-op function kept for backward compatibility."""
+    print(
+        "Warning: 'update snippet' is deprecated. Use create and delete for alias management."
+    )
+
 
 def reindex_database(session: Session):
     """Recalculate the MinHash for every snippet in the database."""
@@ -251,10 +264,10 @@ def get_average_similarity(session: Session, sample_size: int = 100) -> float:
     total_similarity = 0
     num_comparisons = 0
 
-    for i in range(len(snippets)):
-        for j in range(i + 1, len(snippets)):
-            m1 = snippets[i].get_minhash_obj()
-            m2 = snippets[j].get_minhash_obj()
+    for i, snippet_i in enumerate(snippets):
+        for snippet_j in snippets[i + 1:]:
+            m1 = snippet_i.get_minhash_obj()
+            m2 = snippet_j.get_minhash_obj()
             total_similarity += m1.jaccard(m2)
             num_comparisons += 1
 
@@ -264,7 +277,12 @@ def get_db_stats(session: Session):
     """Return a dictionary of database statistics."""
     snippets = Snippet.get_all(session)
     if not snippets:
-        return {"num_snippets": 0, "avg_snippet_size": 0, "vocabulary_size": 0, "avg_similarity": 0.0}
+        return {
+            "num_snippets": 0,
+            "avg_snippet_size": 0,
+            "vocabulary_size": 0,
+            "avg_similarity": 0.0,
+        }
 
     total_size = sum(len(s.code) for s in snippets)
 
