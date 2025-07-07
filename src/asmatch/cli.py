@@ -1,7 +1,7 @@
 """Command line interface for the asmatch tool."""
 
-import glob
 import argparse
+import glob
 import json
 import logging
 import os
@@ -25,40 +25,6 @@ from .core import (
 from .database import create_db_and_tables, engine
 
 logger = logging.getLogger(__name__)
-
-
-def confirm_action(prompt: str) -> bool:
-    """Asks the user for confirmation."""
-    while True:
-        response = input(f"{prompt} [y/N]: ").lower().strip()
-        if response in ["y", "yes"]:
-            return True
-        if response in ["n", "no", ""]:
-            return False
-
-def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> None:
-    """Handle the ``export`` command."""
-    if not confirm_action(
-        f"Are you sure you want to export all snippets to '{args.directory}'?"
-    ):
-        return
-
-    stats = export_snippets(session, args.directory)
-
-    if args.json:
-        logger.info(json.dumps(stats, indent=2))
-    else:
-        logger.info("--- Export Complete ---")
-        logger.info("  Snippets exported: %s", stats["num_exported"])
-        logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
-        if stats["num_exported"] > 0:
-            logger.info(
-                "  Average time per snippet: %.4f ms",
-                stats["avg_time_per_snippet"] * 1000,
-            )
-
-logger = logging.getLogger(__name__)
-
 
 def confirm_action(prompt: str) -> bool:
     """Asks the user for confirmation."""
@@ -91,6 +57,27 @@ def cmd_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
             snippet.name_list,
         )
 
+def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> None:
+    """Handle the ``export`` command."""
+    if not confirm_action(
+        f"Are you sure you want to export all snippets to '{args.directory}'?"
+    ):
+        return
+
+    stats = export_snippets(session, args.directory)
+
+    if args.json:
+        logger.info(json.dumps(stats, indent=2))
+    else:
+        logger.info("--- Export Complete ---")
+        logger.info("  Snippets exported: %s", stats["num_exported"])
+        logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
+        if stats["num_exported"] > 0:
+            logger.info(
+                "  Average time per snippet: %.4f ms",
+                stats["avg_time_per_snippet"] * 1000,
+            )
+
 
 def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``import`` command."""
@@ -101,8 +88,7 @@ def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> Non
 
     start_time = time.time()
     snippets_added = 0
-    
-    # Use glob to find all .asm and .txt files
+
     file_paths = glob.glob(os.path.join(args.directory, '**', '*.asm'), recursive=True)
     file_paths += glob.glob(os.path.join(args.directory, '**', '*.txt'), recursive=True)
 
@@ -342,6 +328,7 @@ def add_config_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_add_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``add`` subparser to ``subparsers``."""
     parser_add = subparsers.add_parser(
         "add", help="Add a new snippet or an alias to existing code."
     )
@@ -351,6 +338,7 @@ def add_add_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_import_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``import`` subparser to ``subparsers``."""
     parser_import = subparsers.add_parser(
         "import", help="Bulk import snippets from a directory."
     )
@@ -363,6 +351,7 @@ def add_import_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser_import.set_defaults(func=cmd_import)
 
 def add_export_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``export`` subparser to ``subparsers``."""
     parser_export = subparsers.add_parser(
         "export", help="Export all snippets to a directory."
     )
@@ -376,6 +365,7 @@ def add_export_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_list_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``list`` subparser to ``subparsers``."""
     parser_list = subparsers.add_parser(
         "list", aliases=["ls"], help="List all snippets."
     )
@@ -389,6 +379,7 @@ def add_list_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_show_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``show`` subparser to ``subparsers``."""
     parser_show = subparsers.add_parser(
         "show", help="Show detailed information for a specific snippet."
     )
@@ -400,6 +391,7 @@ def add_show_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_rm_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``rm`` subparser to ``subparsers``."""
     parser_rm = subparsers.add_parser(
         "rm",
         aliases=["del"],
@@ -410,6 +402,7 @@ def add_rm_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_stats_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``stats`` subparser to ``subparsers``."""
     parser_stats = subparsers.add_parser("stats", help="Show database statistics.")
     parser_stats.add_argument(
         "--json", action="store_true", help="Output in JSON format."
@@ -418,6 +411,7 @@ def add_stats_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_reindex_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``reindex`` subparser to ``subparsers``."""
     parser_reindex = subparsers.add_parser(
         "reindex", help="Re-calculates all MinHashes in the database."
     )
@@ -428,6 +422,7 @@ def add_reindex_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_compare_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``compare`` subparser to ``subparsers``."""
     parser_compare = subparsers.add_parser(
         "compare", help="Compare two snippets directly."
     )
@@ -440,6 +435,7 @@ def add_compare_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_find_subparser(subparsers: argparse._SubParsersAction, config: dict) -> None:
+    """Add the ``find`` subparser to ``subparsers``."""
     parser_find = subparsers.add_parser("find", help="Find similar snippets.")
     find_group = parser_find.add_mutually_exclusive_group()
     find_group.add_argument("--query", help="The query string to search for.")
