@@ -32,9 +32,9 @@ class TestAsmatch(unittest.TestCase):
         name = "test_snippet"
         code = "MOV EAX, 1"
         checksum = get_checksum(code)
-        
+
         add_snippet(self.session, name, code, quiet=True)
-        
+
         retrieved = get_snippet_by_checksum(self.session, checksum)
         self.assertIsNotNone(retrieved)
         self.assertIn(name, retrieved.name_list)
@@ -46,11 +46,11 @@ class TestAsmatch(unittest.TestCase):
         name1 = "snippet_one"
         name2 = "snippet_two"
         code = "MOV EBX, 2"
-        
+
         add_snippet(self.session, name1, code, quiet=True)
         result = add_snippet(self.session, name2, code, quiet=True)
         self.assertIsNotNone(result)
-        
+
         snippets = self.session.exec(select(Snippet)).all()
         self.assertEqual(len(snippets), 1)
         self.assertIn(name1, snippets[0].name_list)
@@ -99,7 +99,7 @@ class TestAsmatch(unittest.TestCase):
             jnz sum_loop
         """
         add_snippet(self.session, snippet2_name, snippet2_code, quiet=True)
-        
+
         query = """
         copy_loop:
             lodsb
@@ -108,7 +108,7 @@ class TestAsmatch(unittest.TestCase):
             jnz copy_loop
         """
         num_candidates, matches = find_matches(self.session, query, top_n=1)
-        
+
         self.assertEqual(len(matches), 1)
         # The key of the match should be the checksum
         self.assertEqual(matches[0][0].checksum, snippet1_checksum)

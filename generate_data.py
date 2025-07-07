@@ -1,3 +1,5 @@
+"""Utility script to generate random assembly files for testing."""
+
 import random
 import os
 import textwrap
@@ -58,6 +60,7 @@ def generate_conditional_block(label_id: int) -> list[str]:
 
 # --- Main Generation Logic ---
 def generate_files():
+    """Generate random assembly files in DATA_DIR."""
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
 
@@ -68,11 +71,11 @@ def generate_files():
 
     for i in range(NUM_FILES):
         name = f"generated_func_{i:04d}"
-        
+
         # --- Build the function body ---
         body = []
         num_blocks = random.randint(2, 5)
-        
+
         for j in range(num_blocks):
             block_type = random.choice([
                 generate_arithmetic_block,
@@ -80,7 +83,7 @@ def generate_files():
                 generate_data_block,
                 generate_conditional_block,
             ])
-            if block_type == generate_conditional_block:
+            if block_type is generate_conditional_block:
                 body.extend(block_type(f"{i}_{j}"))
             else:
                 body.extend(block_type(random.randint(1, 3)))
@@ -89,7 +92,7 @@ def generate_files():
         # --- Assemble the final file content ---
         content = [
             f"; Function: {name}",
-            f"; Description: A highly randomized, auto-generated function.",
+            "; Description: A highly randomized, auto-generated function.",
             "section .text",
             f"global {name}",
             f"{name}:",
@@ -100,12 +103,12 @@ def generate_files():
             "    pop     ebp",
             "    ret",
         ]
-        
+
         # Write the file
         file_path = os.path.join(DATA_DIR, f"{name}.asm")
-        with open(file_path, 'w') as f:
+        with open(file_path, 'w', encoding='utf-8') as f:
             f.write("\n".join(textwrap.indent(line, '    ') for line in content))
-            
+
     print(f"Successfully generated {NUM_FILES} new, more random assembly files in '{DATA_DIR}/'")
 
 if __name__ == "__main__":
