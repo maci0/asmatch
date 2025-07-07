@@ -1,3 +1,5 @@
+"""Setup script for asmatch package."""
+
 from setuptools import find_packages, setup
 
 setup(
