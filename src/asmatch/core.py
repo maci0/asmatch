@@ -1,5 +1,6 @@
 """Core functions for tokenizing and comparing assembly snippets."""
 
+import os
 import hashlib
 import json
 import pickle

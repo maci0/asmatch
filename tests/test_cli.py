@@ -201,6 +201,21 @@ class TestCLI(unittest.TestCase):
             remaining = Snippet.get_by_name(session, "alias2")
             self.assertIsNotNone(remaining)
 
+    def test_export_command(self):
+        """Test the export command."""
+        with tempfile.TemporaryDirectory() as export_dir:
+            result = self.run_command(f"export {export_dir}", input_data="y\n")
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("Export Complete", result.stdout)
+
+            # Verify that the snippet was actually exported
+            exported_file = os.path.join(export_dir, "test_snippet.asm")
+            self.assertTrue(os.path.exists(exported_file))
+
+            with open(exported_file, "r", encoding="utf-8") as f:
+                content = f.read()
+                self.assertEqual(content, "MOV EAX, 1")
+
 
 if __name__ == "__main__":
     unittest.main()
