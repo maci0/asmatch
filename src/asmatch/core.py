@@ -347,14 +347,21 @@ def export_snippets(session: Session, export_dir: str) -> dict:
         ),
     }
 
-def clean_cache() -> dict:
-    """Clean the LSH cache."""
+from sqlmodel import Session, select, text
+
+def clean_database_and_cache(session: Session) -> dict:
+    """Clean the LSH cache and vacuum the database."""
     start_time = time.time()
     num_cleaned = 0
+    # 1. Clean cache files from the current directory
     for filename in os.listdir("."):
         if filename.startswith("lsh_") and filename.endswith(".pkl"):
             os.remove(filename)
             num_cleaned += 1
+
+    # 2. Vacuum the database to reclaim space
+    session.exec(text("VACUUM"))
+    session.commit()
 
     end_time = time.time()
     time_elapsed = end_time - start_time
@@ -362,4 +369,5 @@ def clean_cache() -> dict:
     return {
         "num_cleaned": num_cleaned,
         "time_elapsed": time_elapsed,
+        "vacuum_success": True,
     }
