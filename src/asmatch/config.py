@@ -18,7 +18,7 @@ def load_config() -> dict:
     """Load the user's configuration file if it exists."""
     if not os.path.exists(CONFIG_PATH):
         return DEFAULTS
-        
+
     with open(CONFIG_PATH, "rb") as f:
         try:
             user_config = tomli.load(f)

@@ -28,7 +28,7 @@ def get_normalized_string(code_snippet: str) -> str:
     tokens = lexer.get_tokens(code_snippet)
     # Join tokens, but only if they are not comments or pure whitespace
     return " ".join(
-        value for ttype, value in tokens 
+        value for ttype, value in tokens
         if ttype not in Comment and ttype != Text
     ).strip()
 
@@ -44,7 +44,7 @@ def get_tokens(code_snippet: str, normalize: bool = True):
     for ttype, value in tokens:
         if ttype in Comment:
             continue
-        
+
         if normalize:
             if ttype in Name.Register:
                 output_tokens.append("REG")
@@ -55,7 +55,7 @@ def get_tokens(code_snippet: str, normalize: bool = True):
         else:
             if ttype not in Punctuation and value.strip():
                 output_tokens.append(value.upper())
-                
+
     return output_tokens
 
 def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
@@ -73,7 +73,7 @@ def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
 def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
     """Add a new snippet or alias to the database."""
     checksum = get_checksum(code)
-    
+
     existing_snippet_by_name = Snippet.get_by_name(session, name)
     if existing_snippet_by_name:
         if not quiet:
@@ -81,7 +81,7 @@ def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
         return None
 
     existing_snippet = Snippet.get_by_checksum(session, checksum)
-    
+
     if existing_snippet:
         # Code exists, add new name as an alias
         name_list = existing_snippet.name_list
@@ -96,7 +96,7 @@ def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
     # Snippet with this code does not exist, create a new one
     minhash_obj = code_to_minhash(code)
     minhash_bytes = pickle.dumps(minhash_obj)
-    
+
     new_snippet = Snippet(checksum=checksum, names=json.dumps([name]), code=code, minhash=minhash_bytes)
     session.add(new_snippet)
     session.commit()
@@ -108,19 +108,19 @@ def find_matches(session: Session, query_string: str, top_n: int = 3, threshold:
     """Find and rank matches for a query string."""
     if threshold is None:
         threshold = LSH_THRESHOLD
-        
+
     lsh = load_lsh_cache(session, threshold)
     if not lsh:
         lsh = build_lsh_index(session, threshold, NUM_PERMUTATIONS)
         if lsh:
             save_lsh_cache(session, lsh, threshold)
-    
+
     if lsh is None:
         return 0, [] # Error handled in build_lsh_index
 
     query_minhash = code_to_minhash(query_string, normalize)
     candidate_keys = lsh.query(query_minhash)
-    
+
     if not candidate_keys:
         return 0, []
 
@@ -135,12 +135,12 @@ def find_matches(session: Session, query_string: str, top_n: int = 3, threshold:
         scorer=fuzz.ratio,
         limit=top_n
     )
-    
+
     # Reconstruct the match list with the full snippet object
     top_matches = [
         (candidate_map[checksum], score) for _, score, checksum in top_matches_tuples
     ]
-    
+
     return len(candidate_keys), top_matches
 
 def delete_snippet(session: Session, name: str, quiet: bool = False):
@@ -150,7 +150,7 @@ def delete_snippet(session: Session, name: str, quiet: bool = False):
         if not quiet:
             print(f"Error: Snippet with name '{name}' not found.")
         return False
-    
+
     name_list = snippet.name_list
     if len(name_list) > 1:
         name_list.remove(name)
@@ -164,7 +164,7 @@ def delete_snippet(session: Session, name: str, quiet: bool = False):
         session.commit()
         if not quiet:
             print(f"Removed last name '{name}'. Deleting snippet.")
-            
+
     invalidate_lsh_cache()
     return True
 
@@ -186,13 +186,13 @@ def reindex_database(session: Session):
         minhash_obj = code_to_minhash(snippet.code)
         snippet.minhash = pickle.dumps(minhash_obj)
         session.add(snippet)
-    
+
     session.commit()
     invalidate_lsh_cache()
-    
+
     end_time = time.time()
     time_elapsed = end_time - start_time
-    
+
     return {
         "num_reindexed": num_snippets,
         "time_elapsed": time_elapsed,
@@ -220,7 +220,7 @@ def compare_snippets(session: Session, checksum1: str, checksum2: str) -> dict:
     tokens1 = set(get_tokens(snippet1.code, normalize=True))
     tokens2 = set(get_tokens(snippet2.code, normalize=True))
     shared_tokens = len(tokens1.intersection(tokens2))
-    
+
     return {
         "snippet1": {
             "checksum": snippet1.checksum,
@@ -250,14 +250,14 @@ def get_average_similarity(session: Session, sample_size: int = 100) -> float:
 
     total_similarity = 0
     num_comparisons = 0
-    
+
     for i in range(len(snippets)):
         for j in range(i + 1, len(snippets)):
             m1 = snippets[i].get_minhash_obj()
             m2 = snippets[j].get_minhash_obj()
             total_similarity += m1.jaccard(m2)
             num_comparisons += 1
-            
+
     return total_similarity / num_comparisons if num_comparisons > 0 else 1.0
 
 def get_db_stats(session: Session):
@@ -267,7 +267,7 @@ def get_db_stats(session: Session):
         return {"num_snippets": 0, "avg_snippet_size": 0, "vocabulary_size": 0, "avg_similarity": 0.0}
 
     total_size = sum(len(s.code) for s in snippets)
-    
+
     all_tokens = set()
     for s in snippets:
         all_tokens.update(get_tokens(s.code))

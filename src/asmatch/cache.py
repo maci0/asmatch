@@ -21,7 +21,7 @@ def get_db_checksum(session: Session) -> str:
     count = session.exec(select(func.count(Snippet.checksum))).one()
     if count == 0:
         return "empty"
-    
+
     last_snippet = session.exec(select(Snippet).order_by(Snippet.checksum.desc())).first()
     return f"{count}-{last_snippet.checksum}"
 
@@ -30,10 +30,13 @@ def build_lsh_index(session: Session, threshold: float, num_perm: int) -> MinHas
     try:
         lsh = MinHashLSH(threshold=threshold, num_perm=num_perm)
     except ValueError as e:
-        print(f"Error: Invalid LSH parameters. The threshold ({threshold}) may be too high for the number of permutations ({num_perm}).")
+        print(
+            f"Error: Invalid LSH parameters. The threshold ({threshold}) may be "
+            f"too high for the number of permutations ({num_perm})."
+        )
         print(f"  -> Original error: {e}")
         return None
-        
+
     snippets = Snippet.get_all(session)
     for snippet in snippets:
         lsh.insert(snippet.checksum, snippet.get_minhash_obj())
@@ -43,12 +46,12 @@ def save_lsh_cache(session: Session, lsh, threshold: float):
     """Save the LSH index and the current DB checksum to the cache."""
     if not os.path.exists(CACHE_DIR):
         os.makedirs(CACHE_DIR)
-        
+
     lsh_cache_path = get_lsh_cache_path(threshold)
     with open(lsh_cache_path, "wb") as f:
         pickle.dump(lsh, f)
-        
-    with open(DB_CHECKSUM_PATH, "w") as f:
+
+    with open(DB_CHECKSUM_PATH, "w", encoding="utf-8") as f:
         f.write(get_db_checksum(session))
 
 def load_lsh_cache(session: Session, threshold: float):
@@ -56,15 +59,15 @@ def load_lsh_cache(session: Session, threshold: float):
     lsh_cache_path = get_lsh_cache_path(threshold)
     if not os.path.exists(lsh_cache_path) or not os.path.exists(DB_CHECKSUM_PATH):
         return None
-        
-    with open(DB_CHECKSUM_PATH, "r") as f:
+
+    with open(DB_CHECKSUM_PATH, "r", encoding="utf-8") as f:
         cached_checksum = f.read()
-        
+
     current_checksum = get_db_checksum(session)
-    
+
     if cached_checksum != current_checksum:
         return None # Cache is stale
-        
+
     with open(lsh_cache_path, "rb") as f:
         return pickle.load(f)
 
