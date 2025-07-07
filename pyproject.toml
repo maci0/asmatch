@@ -1,0 +1,13 @@
+[tool.ruff]
+# Same as Black.
+line-length = 88
+
+# Assume Python 3.11.
+target-version = "py311"
+
+[tool.ruff.lint]
+# Enable the isort rules.
+select = ["I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["asmatch"]
