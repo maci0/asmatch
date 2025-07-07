@@ -1,7 +1,6 @@
-
-
-import os
 import random
+import os
+import textwrap
 
 # --- Configuration ---
 NUM_FILES = 1000
@@ -9,27 +8,53 @@ DATA_DIR = "data"
 
 # --- Helper Data ---
 REGISTERS = ["eax", "ebx", "ecx", "edx", "esi", "edi"]
-INSTRUCTIONS = [
-    "add {reg1}, {reg2}",
-    "sub {reg1}, {val1}",
-    "xor {reg2}, {reg2}",
-    "mov {reg1}, {val2}",
-    "and {reg1}, {val1}",
-    "or {reg1}, {val2}",
-    "mul ecx",
-    "div ebx",
-    "inc {reg1}",
-    "dec {reg2}",
-    "push {reg1}",
-    "pop {reg2}",
-]
-COMMENTS = [
-    "; A random comment",
-    "; TODO: Optimize this",
-    "; This is a critical section",
-    "; Magic number, do not touch",
-    "", # No comment
-]
+ARITHMETIC_OPS = ["add", "sub", "and", "or", "xor"]
+STACK_OPS = ["push", "pop"]
+DATA_OPS = ["mov"]
+CONDITIONAL_JUMPS = ["je", "jne", "jg", "jl", "jge", "jle"]
+
+# --- Code Block Generators ---
+
+def generate_arithmetic_block(num_instructions: int) -> list[str]:
+    """Generates a block of random arithmetic operations."""
+    lines = ["; --- Arithmetic Block ---"]
+    for _ in range(num_instructions):
+        op = random.choice(ARITHMETIC_OPS)
+        reg1, reg2 = random.sample(REGISTERS, 2)
+        val = random.randint(1, 1000)
+        lines.append(f"    {op} {reg1}, {reg2}")
+        lines.append(f"    {op} {reg2}, {val}")
+    return lines
+
+def generate_stack_block(num_instructions: int) -> list[str]:
+    """Generates a block of random stack operations."""
+    lines = ["; --- Stack Manipulation ---"]
+    for _ in range(num_instructions):
+        op = random.choice(STACK_OPS)
+        reg = random.choice(REGISTERS)
+        lines.append(f"    {op} {reg}")
+    return lines
+
+def generate_data_block(num_instructions: int) -> list[str]:
+    """Generates a block of random data movement operations."""
+    lines = ["; --- Data Movement ---"]
+    for _ in range(num_instructions):
+        reg1, reg2 = random.sample(REGISTERS, 2)
+        val = random.randint(1, 1000)
+        lines.append(f"    mov {reg1}, {reg2}")
+        lines.append(f"    mov {reg2}, {val}")
+    return lines
+
+def generate_conditional_block(label_id: int) -> list[str]:
+    """Generates a conditional jump block."""
+    lines = ["; --- Conditional Block ---"]
+    reg1, reg2 = random.sample(REGISTERS, 2)
+    jump_op = random.choice(CONDITIONAL_JUMPS)
+    lines.append(f"    cmp {reg1}, {reg2}")
+    lines.append(f"    {jump_op} .label_{label_id}")
+    lines.extend(generate_arithmetic_block(random.randint(1, 2)))
+    lines.append(f".label_{label_id}:")
+    return lines
 
 # --- Main Generation Logic ---
 def generate_files():
@@ -42,54 +67,29 @@ def generate_files():
             os.remove(os.path.join(DATA_DIR, f))
 
     for i in range(NUM_FILES):
-        # Choose random registers
-        reg1, reg2 = random.sample(REGISTERS, 2)
-        
-        # Generate a unique function name
         name = f"generated_func_{i:04d}"
-        
-        # Generate random values
-        val1 = random.randint(1, 1000)
-        val2 = random.randint(1, 1000)
         
         # --- Build the function body ---
         body = []
-        num_instructions = random.randint(5, 20)
+        num_blocks = random.randint(2, 5)
         
-        for _ in range(num_instructions):
-            # Choose a random instruction and format it
-            instruction_template = random.choice(INSTRUCTIONS)
-            instruction = instruction_template.format(reg1=reg1, reg2=reg2, val1=val1, val2=val2)
-            
-            # Add a random comment
-            comment = random.choice(COMMENTS)
-            
-            body.append(f"    {instruction.ljust(25)} {comment}")
-
-        # --- Optional Loop ---
-        if random.random() > 0.5: # 50% chance of having a loop
-            loop_count = random.randint(3, 10)
-            loop_body = []
-            for _ in range(random.randint(1, 3)): # 1 to 3 instructions in the loop
-                reg1, reg2 = random.sample(REGISTERS, 2)
-                val1 = random.randint(1, 100)
-                instruction_template = random.choice(INSTRUCTIONS)
-                instruction = instruction_template.format(reg1=reg1, reg2=reg2, val1=val1, val2=val1)
-                loop_body.append(f"        {instruction}")
-
-            loop_code = [
-                f"    mov ecx, {loop_count}",
-                f".loop_{i}:",
-            ] + loop_body + [
-                "        dec ecx",
-                f"        jnz .loop_{i}",
-            ]
-            body.extend(loop_code)
+        for j in range(num_blocks):
+            block_type = random.choice([
+                generate_arithmetic_block,
+                generate_stack_block,
+                generate_data_block,
+                generate_conditional_block,
+            ])
+            if block_type == generate_conditional_block:
+                body.extend(block_type(f"{i}_{j}"))
+            else:
+                body.extend(block_type(random.randint(1, 3)))
+            body.append("") # Add a blank line for spacing
 
         # --- Assemble the final file content ---
         content = [
             f"; Function: {name}",
-            "; Description: A randomly generated function.",
+            f"; Description: A highly randomized, auto-generated function.",
             "section .text",
             f"global {name}",
             f"{name}:",
@@ -104,10 +104,9 @@ def generate_files():
         # Write the file
         file_path = os.path.join(DATA_DIR, f"{name}.asm")
         with open(file_path, 'w') as f:
-            f.write("\n".join(content))
+            f.write("\n".join(textwrap.indent(line, '    ') for line in content))
             
     print(f"Successfully generated {NUM_FILES} new, more random assembly files in '{DATA_DIR}/'")
 
 if __name__ == "__main__":
     generate_files()
-

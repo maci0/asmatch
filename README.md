@@ -107,6 +107,9 @@ asmatch show <checksum>
 
 # Find similar snippets
 asmatch find --query "MOV EAX"
+
+# Compare two snippets by their checksums
+asmatch compare <checksum1> <checksum2>
 ```
 
 For a detailed breakdown of all commands and features, see the [User Stories](./docs/user_stories.md) or run:

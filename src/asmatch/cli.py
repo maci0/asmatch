@@ -1,3 +1,4 @@
+
 # asmatch/cli.py
 import argparse
 import json
@@ -10,6 +11,7 @@ from sqlmodel import Session
 from .config import CONFIG_PATH, load_config
 from .core import (
     add_snippet,
+    compare_snippets,
     delete_snippet,
     find_matches,
     get_db_stats,
@@ -93,6 +95,12 @@ def main():
     parser_config_set.add_argument("key", choices=["lsh_threshold", "top_n"], help="The configuration key to set.")
     parser_config_set.add_argument("value", help="The value to set.")
 
+    # --- Compare command ---
+    parser_compare = subparsers.add_parser("compare", help="Compare two snippets directly.")
+    parser_compare.add_argument("checksum1", help="The checksum of the first snippet.")
+    parser_compare.add_argument("checksum2", help="The checksum of the second snippet.")
+    parser_compare.add_argument("--json", action="store_true", help="Output results in JSON format.")
+
 
     args = parser.parse_args()
 
@@ -169,6 +177,7 @@ def main():
                 print(f"  Number of snippets: {stats['num_snippets']}")
                 print(f"  Average snippet size: {stats['avg_snippet_size']:.2f} characters")
                 print(f"  Vocabulary size: {stats['vocabulary_size']} unique tokens")
+                print(f"  Average in-dataset similarity: {stats['avg_similarity']:.2f}")
         elif args.command == "reindex":
             if confirm_action("Are you sure you want to re-index the entire database? This may take a while."):
                 stats = reindex_database(session)
@@ -230,6 +239,28 @@ def main():
                     # A more robust implementation would use a TOML library to write
                     f.write(f"{args.key} = {args.value}\n")
                 print(f"Set {args.key} to {args.value}")
+        elif args.command == "compare":
+            comparison = compare_snippets(session, args.checksum1, args.checksum2)
+            
+            if not comparison:
+                print("Error: One or both snippets could not be found.")
+                sys.exit(1)
+                
+            if args.json:
+                print(json.dumps(comparison, indent=2))
+            else:
+                s1 = comparison['snippet1']
+                s2 = comparison['snippet2']
+                comp = comparison['comparison']
+
+                print("--- Snippet Comparison ---")
+                print(f"Snippet 1: {s1['names']} ({s1['checksum'][:12]}...)")
+                print(f"Snippet 2: {s2['names']} ({s2['checksum'][:12]}...)")
+                print("\n--- Similarity Metrics ---")
+                print(f"  Jaccard Similarity (Structure): {comp['jaccard_similarity']:.2f}")
+                print(f"  Levenshtein Score (Code):       {comp['levenshtein_score']:.2f}")
+                print(f"  Shared Normalized Tokens:       {comp['shared_normalized_tokens']}")
+
 
 if __name__ == "__main__":
     main()
