@@ -40,3 +40,9 @@ When working with an AI agent, provide clear and specific instructions. Instead 
 - "Refactor the project to use a `src` layout."
 
 By following these principles and providing clear instructions, we can ensure that the project evolves in a structured and maintainable way.
+
+## Documentation Guidelines
+
+- Keep `README.md` current with details on the search flow and usage.
+- Update `docs/user_stories.md` whenever commands or options change.
+- Documentation updates should be included in the same pull request as code changes whenever possible.
