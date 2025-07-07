@@ -361,7 +361,8 @@ def clean_database_and_cache(session: Session) -> dict:
             num_cleaned += 1
 
     # 2. Vacuum the database to reclaim space
-    session.exec(text("VACUUM"))
+    # Use the underlying DBAPI connection to execute VACUUM
+    session.execute(text("VACUUM"))
     session.commit()
 
     end_time = time.time()
