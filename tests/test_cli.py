@@ -5,9 +5,11 @@ import random
 import shlex
 import subprocess
 import unittest
+
 from sqlmodel import Session, SQLModel, create_engine
-from asmatch.models import Snippet
+
 from asmatch.core import add_snippet
+from asmatch.models import Snippet
 
 
 class TestCLI(unittest.TestCase):
@@ -72,5 +74,6 @@ class TestCLI(unittest.TestCase):
             snippet = Snippet.get_by_name(session, "new_snippet")
             self.assertIsNotNone(snippet)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
