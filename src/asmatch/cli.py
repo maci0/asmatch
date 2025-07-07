@@ -69,7 +69,9 @@ def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> Non
     for filename in os.listdir(args.directory):
         if filename.endswith((".asm", ".txt")):
             name = os.path.splitext(filename)[0]
-            with open(os.path.join(args.directory, filename), "r", encoding="utf-8") as f:
+            with open(
+                os.path.join(args.directory, filename), "r", encoding="utf-8"
+            ) as f:
                 code = f.read()
             snippet = add_snippet(session, name, code, quiet=True)
             if snippet:
@@ -80,7 +82,9 @@ def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> Non
     stats = {
         "num_imported": snippets_added,
         "time_elapsed": time_elapsed,
-        "avg_time_per_snippet": time_elapsed / snippets_added if snippets_added > 0 else 0,
+        "avg_time_per_snippet": (
+            time_elapsed / snippets_added if snippets_added > 0 else 0
+        ),
     }
 
     if args.json:
@@ -157,7 +161,9 @@ def cmd_stats(args: argparse.Namespace, session: Session, _config: dict) -> None
     else:
         logger.info("--- Database Statistics ---")
         logger.info("  Number of snippets: %s", stats["num_snippets"])
-        logger.info("  Average snippet size: %.2f characters", stats["avg_snippet_size"])
+        logger.info(
+            "  Average snippet size: %.2f characters", stats["avg_snippet_size"]
+        )
         logger.info("  Vocabulary size: %s unique tokens", stats["vocabulary_size"])
         logger.info("  Average in-dataset similarity: %.2f", stats["avg_similarity"])
 
@@ -270,18 +276,26 @@ def cmd_compare(args: argparse.Namespace, session: Session, _config: dict) -> No
         logger.info("Snippet 1: %s (%s...)", s1["names"], s1["checksum"][:12])
         logger.info("Snippet 2: %s (%s...)", s2["names"], s2["checksum"][:12])
         logger.info("\n--- Similarity Metrics ---")
-        logger.info("  Jaccard Similarity (Structure): %.2f", comp["jaccard_similarity"])
+        logger.info(
+            "  Jaccard Similarity (Structure): %.2f", comp["jaccard_similarity"]
+        )
         logger.info("  Levenshtein Score (Code):       %.2f", comp["levenshtein_score"])
-        logger.info("  Shared Normalized Tokens:       %s", comp["shared_normalized_tokens"])
+        logger.info(
+            "  Shared Normalized Tokens:       %s", comp["shared_normalized_tokens"]
+        )
 
 
 def add_config_subparser(subparsers: argparse._SubParsersAction) -> None:
     """Add the ``config`` subparser to ``subparsers``."""
     parser_config = subparsers.add_parser("config", help="Manage user configuration.")
-    config_subparsers = parser_config.add_subparsers(dest="config_command", required=True)
+    config_subparsers = parser_config.add_subparsers(
+        dest="config_command", required=True
+    )
     config_subparsers.add_parser("path", help="Show the path to the config file.")
     config_subparsers.add_parser("list", help="List current settings.")
-    parser_config_set = config_subparsers.add_parser("set", help="Set a configuration value.")
+    parser_config_set = config_subparsers.add_parser(
+        "set", help="Set a configuration value."
+    )
     parser_config_set.add_argument(
         "key", choices=["lsh_threshold", "top_n"], help="The configuration key to set."
     )
@@ -296,33 +310,57 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
         formatter_class=argparse.RawTextHelpFormatter,
     )
     verbosity_group = parser.add_mutually_exclusive_group()
-    verbosity_group.add_argument("-q", "--quiet", action="store_true", help="Suppress informational output.")
-    verbosity_group.add_argument("-v", "--verbose", action="store_true", help="Increase output verbosity.")
+    verbosity_group.add_argument(
+        "-q", "--quiet", action="store_true", help="Suppress informational output."
+    )
+    verbosity_group.add_argument(
+        "-v", "--verbose", action="store_true", help="Increase output verbosity."
+    )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    parser_add = subparsers.add_parser("add", help="Add a new snippet or an alias to existing code.")
+    parser_add = subparsers.add_parser(
+        "add", help="Add a new snippet or an alias to existing code."
+    )
     parser_add.add_argument("name", help="The name or alias for the snippet.")
     parser_add.add_argument("code", help="The assembly code of the snippet.")
     parser_add.set_defaults(func=cmd_add)
 
-    parser_import = subparsers.add_parser("import", help="Bulk import snippets from a directory.")
-    parser_import.add_argument("directory", help="The directory containing .asm or .txt files.")
-    parser_import.add_argument("--json", action="store_true", help="Output results in JSON format.")
+    parser_import = subparsers.add_parser(
+        "import", help="Bulk import snippets from a directory."
+    )
+    parser_import.add_argument(
+        "directory", help="The directory containing .asm or .txt files."
+    )
+    parser_import.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
     parser_import.set_defaults(func=cmd_import)
 
-    parser_list = subparsers.add_parser("list", aliases=["ls"], help="List all snippets.")
-    parser_list.add_argument("--range", help="A range of snippets to list (e.g., 10-30).")
-    parser_list.add_argument("--json", action="store_true", help="Output in JSON format.")
+    parser_list = subparsers.add_parser(
+        "list", aliases=["ls"], help="List all snippets."
+    )
+    parser_list.add_argument(
+        "--range", help="A range of snippets to list (e.g., 10-30)."
+    )
+    parser_list.add_argument(
+        "--json", action="store_true", help="Output in JSON format."
+    )
     parser_list.set_defaults(func=cmd_list)
 
-    parser_show = subparsers.add_parser("show", help="Show detailed information for a specific snippet.")
+    parser_show = subparsers.add_parser(
+        "show", help="Show detailed information for a specific snippet."
+    )
     parser_show.add_argument("checksum", help="The checksum of the snippet.")
-    parser_show.add_argument("--json", action="store_true", help="Output in JSON format.")
+    parser_show.add_argument(
+        "--json", action="store_true", help="Output in JSON format."
+    )
     parser_show.set_defaults(func=cmd_show)
 
     parser_rm = subparsers.add_parser(
-        "rm", aliases=["del"], help="Remove a snippet name. If it's the last name, the snippet is deleted."
+        "rm",
+        aliases=["del"],
+        help="Remove a snippet name. If it's the last name, the snippet is deleted.",
     )
     parser_rm.add_argument("name", help="The name of the snippet to remove.")
     parser_rm.set_defaults(func=cmd_rm)
@@ -343,7 +381,9 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
         default=config.get("lsh_threshold"),
         help=f"LSH threshold override (0.0-1.0, default: {config.get('lsh_threshold')}).",
     )
-    parser_find.add_argument("--json", action="store_true", help="Output results in JSON format.")
+    parser_find.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
     parser_find.add_argument(
         "--no-normalization",
         action="store_true",
@@ -352,19 +392,29 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     parser_find.set_defaults(func=cmd_find)
 
     parser_stats = subparsers.add_parser("stats", help="Show database statistics.")
-    parser_stats.add_argument("--json", action="store_true", help="Output in JSON format.")
+    parser_stats.add_argument(
+        "--json", action="store_true", help="Output in JSON format."
+    )
     parser_stats.set_defaults(func=cmd_stats)
 
-    parser_reindex = subparsers.add_parser("reindex", help="Re-calculates all MinHashes in the database.")
-    parser_reindex.add_argument("--json", action="store_true", help="Output in JSON format.")
+    parser_reindex = subparsers.add_parser(
+        "reindex", help="Re-calculates all MinHashes in the database."
+    )
+    parser_reindex.add_argument(
+        "--json", action="store_true", help="Output in JSON format."
+    )
     parser_reindex.set_defaults(func=cmd_reindex)
 
     add_config_subparser(subparsers)
 
-    parser_compare = subparsers.add_parser("compare", help="Compare two snippets directly.")
+    parser_compare = subparsers.add_parser(
+        "compare", help="Compare two snippets directly."
+    )
     parser_compare.add_argument("checksum1", help="The checksum of the first snippet.")
     parser_compare.add_argument("checksum2", help="The checksum of the second snippet.")
-    parser_compare.add_argument("--json", action="store_true", help="Output results in JSON format.")
+    parser_compare.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
     parser_compare.set_defaults(func=cmd_compare)
 
     return parser
