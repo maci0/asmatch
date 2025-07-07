@@ -9,9 +9,9 @@ CONFIG_DIR = os.path.expanduser("~/.config/asmatch")
 CONFIG_PATH = os.path.join(CONFIG_DIR, "config.toml")
 
 DEFAULTS = {
-    "lsh_threshold": 0.2,
+    "lsh_threshold": 0.5,
     "num_permutations": 128,
-    "top_n": 3,
+    "top_n": 5,
 }
 
 def load_config() -> dict:
