@@ -1,8 +1,8 @@
 """Core functions for tokenizing and comparing assembly snippets."""
 
-import os
 import hashlib
 import json
+import os
 import pickle
 import random
 import time
@@ -148,8 +148,7 @@ def find_matches(
     candidate_snippets = [
         Snippet.get_by_checksum(session, key) for key in candidate_keys
     ]
-    
-    # Create a dictionary mapping checksum to the full snippet object and code for fuzzy matching
+
     candidate_map = {s.checksum: s for s in candidate_snippets if s}
     candidate_choices = {checksum: snippet.code for checksum, snippet in candidate_map.items()}
 
