@@ -5,3 +5,4 @@ rapidfuzz
 tomli
 tomli_w
 setuptools
+pytest
