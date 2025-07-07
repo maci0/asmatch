@@ -20,7 +20,7 @@ This approach provides several advantages:
 
 ### LSH Caching
 
-To make searches nearly instantaneous, `asmatch` caches the LSH index to a file in `~/.cache/asmatch/`. The cache is automatically invalidated and rebuilt whenever the database is modified.
+To make searches nearly instantaneous, `asmatch` caches the LSH index to a file in `~/.cache/asmatch/`. The location can be overridden with the `ASMATCH_CACHE_DIR` environment variable. The cache is automatically invalidated and rebuilt whenever the database is modified.
 
 ## How It Works
 
@@ -78,7 +78,7 @@ pip install -e .
 ### 2. Configuration
 
 You can create a configuration file at `~/.config/asmatch/config.toml` to set
-default values.
+default values. Set `ASMATCH_CONFIG_DIR` to override this location.
 
 | Key               | Default | Description |
 |-------------------|--------:|-------------|
