@@ -74,6 +74,12 @@ class TestCLI(unittest.TestCase):
             snippet = Snippet.get_by_name(session, "new_snippet")
             self.assertIsNotNone(snippet)
 
+    def test_quiet_option(self):
+        """Test that --quiet suppresses informational output."""
+        result = self.run_command("--quiet stats")
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.strip(), "")
+
 
 if __name__ == "__main__":
     unittest.main()
