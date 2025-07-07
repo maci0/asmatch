@@ -1,12 +1,17 @@
-import random
-import unittest
-import subprocess
+"""Integration tests for the asmatch CLI."""
+
 import os
-from sqlmodel import Session, SQLModel, create_engine, select
+import random
+import shlex
+import subprocess
+import unittest
+from sqlmodel import Session, SQLModel, create_engine
 from asmatch.models import Snippet
 from asmatch.core import add_snippet
 
+
 class TestCLI(unittest.TestCase):
+    """Integration tests exercising the command-line interface."""
 
     def setUp(self):
         """Set up a clean, in-memory database for each test."""
@@ -23,11 +28,16 @@ class TestCLI(unittest.TestCase):
     def run_command(self, command):
         """Helper function to run a command and return the output."""
         result = subprocess.run(
-            f"asmatch {command}",
-            shell=True,
+            ["python", "-m", "asmatch.cli", *shlex.split(command)],
+            shell=False,
             capture_output=True,
             text=True,
-            env={**os.environ, "DATABASE_URL": f"sqlite:///{self.db_name}"},
+            env={
+                **os.environ,
+                "PYTHONPATH": os.path.join(os.getcwd(), "src"),
+                "DATABASE_URL": f"sqlite:///{self.db_name}",
+            },
+            check=False,
         )
         return result
 
@@ -35,7 +45,7 @@ class TestCLI(unittest.TestCase):
         """Test that the --help message is displayed correctly."""
         result = self.run_command("--help")
         self.assertEqual(result.returncode, 0)
-        self.assertIn("usage: asmatch", result.stdout)
+        self.assertIn("usage:", result.stdout)
 
     def test_stats_command(self):
         """Test the stats command."""
@@ -63,5 +73,4 @@ class TestCLI(unittest.TestCase):
             self.assertIsNotNone(snippet)
 
 if __name__ == '__main__':
-    import random
     unittest.main()
