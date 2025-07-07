@@ -157,7 +157,12 @@ asmatch import tests/test_data
 
 ```bash
 # search for a snippet
-asmatch find --query "push esi; mov esi, dword [esp+0CH]; push edi"
+asmatch find --threshold 0.2 --query "push esi; mov esi, dword [esp+0CH]; push edi"
+```
+
+```bash
+# search for a function
+asmatch find --file tests/test_data/1000A0A0.asm 
 ```
 
 ### 5. Running Tests
