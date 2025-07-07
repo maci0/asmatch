@@ -11,7 +11,7 @@ from datasketch import MinHash
 from pygments.lexers.asm import NasmLexer
 from pygments.token import Comment, Name, Number, Punctuation, Text
 from rapidfuzz import fuzz, process
-from sqlmodel import Session, select
+from sqlmodel import Session, select, text
 
 from .cache import build_lsh_index, invalidate_lsh_cache, load_lsh_cache, save_lsh_cache
 from .models import Snippet
@@ -150,7 +150,9 @@ def find_matches(
     ]
 
     candidate_map = {s.checksum: s for s in candidate_snippets if s}
-    candidate_choices = {checksum: snippet.code for checksum, snippet in candidate_map.items()}
+    candidate_choices = {
+        checksum: snippet.code for checksum, snippet in candidate_map.items()
+    }
 
     top_matches_tuples = process.extract(
         query_string, candidate_choices, scorer=fuzz.ratio, limit=top_n
@@ -346,8 +348,6 @@ def export_snippets(session: Session, export_dir: str) -> dict:
             time_elapsed / num_exported if num_exported > 0 else 0
         ),
     }
-
-from sqlmodel import Session, select, text
 
 def clean_database_and_cache(session: Session) -> dict:
     """Clean the LSH cache and vacuum the database."""
