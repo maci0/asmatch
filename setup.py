@@ -13,6 +13,7 @@ setup(
         "datasketch",
         "rapidfuzz",
         "tomli",
+        "tomli_w",
     ],
     extras_require={
         "dev": ["ruff", "black", "unittest-xml-reporting"],

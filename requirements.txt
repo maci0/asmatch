@@ -3,3 +3,4 @@ pygments
 datasketch
 rapidfuzz
 tomli
+tomli_w

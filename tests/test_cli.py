@@ -4,8 +4,10 @@ import os
 import random
 import shlex
 import subprocess
+import tempfile
 import unittest
 
+import tomli
 from sqlmodel import Session, SQLModel, create_engine
 
 from asmatch.core import add_snippet
@@ -73,6 +75,40 @@ class TestCLI(unittest.TestCase):
         with Session(self.engine) as session:
             snippet = Snippet.get_by_name(session, "new_snippet")
             self.assertIsNotNone(snippet)
+
+    def test_config_set_preserves_existing_settings(self):
+        """`config set` should update a single key without losing others."""
+        with tempfile.TemporaryDirectory() as home:
+            env = {
+                **os.environ,
+                "PYTHONPATH": os.path.join(os.getcwd(), "src"),
+                "DATABASE_URL": f"sqlite:///{self.db_name}",
+                "HOME": home,
+            }
+            result = subprocess.run(
+                ["python", "-m", "asmatch.cli", "config", "set", "lsh_threshold", "0.7"],
+                capture_output=True,
+                text=True,
+                env=env,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0)
+
+            result = subprocess.run(
+                ["python", "-m", "asmatch.cli", "config", "set", "top_n", "10"],
+                capture_output=True,
+                text=True,
+                env=env,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0)
+
+            config_path = os.path.join(home, ".config", "asmatch", "config.toml")
+            with open(config_path, "rb") as f:
+                data = tomli.load(f)
+
+            self.assertEqual(data.get("lsh_threshold"), 0.7)
+            self.assertEqual(data.get("top_n"), 10)
 
 
 if __name__ == "__main__":
