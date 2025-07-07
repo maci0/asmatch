@@ -70,6 +70,13 @@ class TestCLI(unittest.TestCase):
         self.assertIn("Top Matches", result.stdout)
         self.assertIn("test_snippet", result.stdout)
 
+    def test_find_command_with_stdin(self):
+        """Test the find command with stdin."""
+        result = self.run_command("find --query -", input_data="MOV EAX, 1")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Top Matches", result.stdout)
+        self.assertIn("test_snippet", result.stdout)
+
     def test_add_command(self):
         """Test the add command."""
         result = self.run_command("add new_snippet 'MOV EBX, 2'")

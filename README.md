@@ -146,7 +146,21 @@ asmatch --help
 python -m asmatch --help
 ```
 
-### 4. Running Tests
+### 4. Example with test_data
+
+This is an example of how to import the provided `test_data` and then search for a snippet within it.
+
+```bash
+# import the data
+asmatch import tests/test_data
+```
+
+```bash
+# search for a snippet
+asmatch find --query "push esi; mov esi, dword [esp+0CH]; push edi"
+```
+
+### 5. Running Tests
 
 To ensure everything is working correctly, you can run the test suite:
 ```bash

@@ -195,14 +195,25 @@ def cmd_find(args: argparse.Namespace, session: Session, _config: dict) -> None:
         logger.error("Error: --threshold must be between 0.0 and 0.98.")
         sys.exit(1)
 
-    query_string = args.query
-    if args.file:
+    query_string = None
+    if args.query:
+        if args.query == "-":
+            query_string = sys.stdin.read()
+        else:
+            query_string = args.query
+    elif args.file:
         try:
             with open(args.file, "r", encoding="utf-8") as f:
                 query_string = f.read()
         except FileNotFoundError:
             logger.error("Error: File not found at %s", args.file)
             sys.exit(1)
+    elif not sys.stdin.isatty():
+        query_string = sys.stdin.read()
+
+    if not query_string:
+        logger.error("Error: No query provided. Use --query, --file, or stdin.")
+        sys.exit(1)
 
     num_candidates, matches = find_matches(
         session, query_string, args.top_n, args.threshold, not args.no_normalization
@@ -366,7 +377,7 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     parser_rm.set_defaults(func=cmd_rm)
 
     parser_find = subparsers.add_parser("find", help="Find similar snippets.")
-    find_group = parser_find.add_mutually_exclusive_group(required=True)
+    find_group = parser_find.add_mutually_exclusive_group()
     find_group.add_argument("--query", help="The query string to search for.")
     find_group.add_argument("--file", help="Path to a file containing the query.")
     parser_find.add_argument(
