@@ -120,6 +120,9 @@ asmatch add my_memcpy "MOV EAX, EBX; ..."
 # Bulk-import from a directory
 asmatch import /path/to/my/snippets/
 
+# Export all snippets to a directory
+asmatch export /path/to/my/backups/
+
 # List all snippets
 asmatch list
 
@@ -131,6 +134,9 @@ asmatch find --query "MOV EAX"
 
 # Compare two snippets by their checksums
 asmatch compare <checksum1> <checksum2>
+
+# Clean the cache and optimize the database
+asmatch clean
 ```
 
 Global options:
