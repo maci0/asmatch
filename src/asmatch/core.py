@@ -16,7 +16,7 @@ from .models import Snippet
 
 # --- Constants and Configuration ---
 NUM_PERMUTATIONS = 128
-LSH_THRESHOLD = 0.2
+LSH_THRESHOLD = 0.5
 
 # Initialize the Lexer once
 lexer = NasmLexer()
