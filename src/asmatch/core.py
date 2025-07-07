@@ -318,3 +318,31 @@ def list_snippets(session: Session, start: int = 0, end: int = 0):
     if end > 0:
         return session.exec(select(Snippet).offset(start).limit(end - start)).all()
     return Snippet.get_all(session)
+
+
+def export_snippets(session: Session, export_dir: str) -> dict:
+    """Export all snippets to a directory."""
+    start_time = time.time()
+    snippets = Snippet.get_all(session)
+    num_exported = 0
+
+    os.makedirs(export_dir, exist_ok=True)
+
+    for snippet in snippets:
+        # Use the first name as the primary name
+        primary_name = snippet.name_list[0]
+        file_path = os.path.join(export_dir, f"{primary_name}.asm")
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(snippet.code)
+        num_exported += 1
+
+    end_time = time.time()
+    time_elapsed = end_time - start_time
+
+    return {
+        "num_exported": num_exported,
+        "time_elapsed": time_elapsed,
+        "avg_time_per_snippet": (
+            time_elapsed / num_exported if num_exported > 0 else 0
+        ),
+    }

@@ -15,12 +15,46 @@ from .core import (
     add_snippet,
     compare_snippets,
     delete_snippet,
+    export_snippets,
     find_matches,
     get_db_stats,
     get_snippet_by_checksum,
     list_snippets,
     reindex_database,
 )
+
+def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> None:
+    """Handle the ``export`` command."""
+    if not confirm_action(
+        f"Are you sure you want to export all snippets to '{args.directory}'?"
+    ):
+        return
+
+    stats = export_snippets(session, args.directory)
+
+    if args.json:
+        logger.info(json.dumps(stats, indent=2))
+    else:
+        logger.info("--- Export Complete ---")
+        logger.info("  Snippets exported: %s", stats["num_exported"])
+        logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
+        if stats["num_exported"] > 0:
+            logger.info(
+                "  Average time per snippet: %.4f ms",
+                stats["avg_time_per_snippet"] * 1000,
+            )
+
+def add_export_subparser(subparsers: argparse._SubParsersAction) -> None:
+    parser_export = subparsers.add_parser(
+        "export", help="Export all snippets to a directory."
+    )
+    parser_export.add_argument(
+        "directory", help="The directory to export snippets to."
+    )
+    parser_export.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
+    parser_export.set_defaults(func=cmd_export)
 from .database import create_db_and_tables, engine
 
 logger = logging.getLogger(__name__)
@@ -444,6 +478,7 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     # Add subparsers for each command
     add_add_subparser(subparsers)
     add_import_subparser(subparsers)
+    add_export_subparser(subparsers)
     add_list_subparser(subparsers)
     add_show_subparser(subparsers)
     add_rm_subparser(subparsers)
