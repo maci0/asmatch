@@ -22,6 +22,19 @@ from .core import (
     list_snippets,
     reindex_database,
 )
+from .database import create_db_and_tables, engine
+
+logger = logging.getLogger(__name__)
+
+
+def confirm_action(prompt: str) -> bool:
+    """Asks the user for confirmation."""
+    while True:
+        response = input(f"{prompt} [y/N]: ").lower().strip()
+        if response in ["y", "yes"]:
+            return True
+        if response in ["n", "no", ""]:
+            return False
 
 def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``export`` command."""
@@ -43,19 +56,6 @@ def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> Non
                 "  Average time per snippet: %.4f ms",
                 stats["avg_time_per_snippet"] * 1000,
             )
-
-def add_export_subparser(subparsers: argparse._SubParsersAction) -> None:
-    parser_export = subparsers.add_parser(
-        "export", help="Export all snippets to a directory."
-    )
-    parser_export.add_argument(
-        "directory", help="The directory to export snippets to."
-    )
-    parser_export.add_argument(
-        "--json", action="store_true", help="Output results in JSON format."
-    )
-    parser_export.set_defaults(func=cmd_export)
-from .database import create_db_and_tables, engine
 
 logger = logging.getLogger(__name__)
 
@@ -361,6 +361,18 @@ def add_import_subparser(subparsers: argparse._SubParsersAction) -> None:
         "--json", action="store_true", help="Output results in JSON format."
     )
     parser_import.set_defaults(func=cmd_import)
+
+def add_export_subparser(subparsers: argparse._SubParsersAction) -> None:
+    parser_export = subparsers.add_parser(
+        "export", help="Export all snippets to a directory."
+    )
+    parser_export.add_argument(
+        "directory", help="The directory to export snippets to."
+    )
+    parser_export.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
+    parser_export.set_defaults(func=cmd_export)
 
 
 def add_list_subparser(subparsers: argparse._SubParsersAction) -> None:
