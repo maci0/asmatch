@@ -1,0 +1,115 @@
+import unittest
+from sqlmodel import Session, SQLModel, create_engine, select
+from asmatch.models import Snippet
+from asmatch.core import (
+    add_snippet,
+    find_matches,
+    get_checksum,
+    get_snippet_by_checksum,
+    normalize_and_hash,
+)
+from asmatch.database import create_db_and_tables
+
+# Use an in-memory SQLite database for testing
+DATABASE_URL = "sqlite:///:memory:"
+engine = create_engine(DATABASE_URL)
+
+class TestAsmatch(unittest.TestCase):
+
+    def setUp(self):
+        """Set up a clean database for each test."""
+        SQLModel.metadata.create_all(engine)
+        self.session = Session(engine)
+
+    def tearDown(self):
+        """Clean up the database after each test."""
+        self.session.close()
+        SQLModel.metadata.drop_all(engine)
+
+    def test_add_and_get_snippet(self):
+        """Test adding a snippet and retrieving it by its checksum."""
+        name = "test_snippet"
+        code = "MOV EAX, 1"
+        checksum = get_checksum(code)
+        
+        add_snippet(self.session, name, code)
+        
+        retrieved = get_snippet_by_checksum(self.session, checksum)
+        self.assertIsNotNone(retrieved)
+        self.assertEqual(retrieved.name, name)
+        self.assertEqual(retrieved.code, code)
+        self.assertEqual(retrieved.checksum, checksum)
+
+    def test_duplicate_snippet_by_code(self):
+        """Test that adding a snippet with identical code is prevented."""
+        name1 = "snippet_one"
+        name2 = "snippet_two"
+        code = "MOV EBX, 2"
+        
+        add_snippet(self.session, name1, code, quiet=True)
+        # Adding it again with a different name should fail
+        result = add_snippet(self.session, name2, code, quiet=True)
+        self.assertIsNone(result)
+        
+        snippets = self.session.exec(select(Snippet)).all()
+        self.assertEqual(len(snippets), 1)
+
+    def test_duplicate_snippet_by_name(self):
+        """Test that adding a snippet with a duplicate name is prevented."""
+        name = "duplicate_name"
+        code1 = "MOV ECX, 3"
+        code2 = "MOV EDX, 4"
+
+        add_snippet(self.session, name, code1, quiet=True)
+        result = add_snippet(self.session, name, code2, quiet=True)
+        self.assertIsNone(result)
+
+        snippets = self.session.exec(select(Snippet)).all()
+        self.assertEqual(len(snippets), 1)
+
+    def test_normalization(self):
+        """Test the normalization function."""
+        code1 = "MOV EAX, [ESP+4] ; load first argument"
+        code2 = "mov eax, [esp+4]"
+        minhash1 = normalize_and_hash(code1)
+        minhash2 = normalize_and_hash(code2)
+        self.assertGreater(minhash1.jaccard(minhash2), 0.99)
+
+    def test_find_matches(self):
+        """Test finding top matches for a query."""
+        snippet1_name = "string_copy"
+        snippet1_code = """
+        string_copy:
+            lodsb
+            stosb
+            test al, al
+            jnz string_copy
+        """
+        snippet1_checksum = get_checksum(snippet1_code)
+        add_snippet(self.session, snippet1_name, snippet1_code)
+
+        snippet2_name = "sum_array"
+        snippet2_code = """
+        sum_loop:
+            add eax, [esi]
+            add esi, 4
+            dec ecx
+            jnz sum_loop
+        """
+        add_snippet(self.session, snippet2_name, snippet2_code)
+        
+        query = """
+        copy_loop:
+            lodsb
+            stosb
+            test al, al
+            jnz copy_loop
+        """
+        matches = find_matches(self.session, query, top_n=1)
+        
+        self.assertEqual(len(matches), 1)
+        # The key of the match should be the checksum
+        self.assertEqual(matches[0][2], snippet1_checksum)
+
+if __name__ == '__main__':
+    unittest.main()

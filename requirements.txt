@@ -1,0 +1,4 @@
+sqlmodel
+pygments
+datasketch
+rapidfuzz
