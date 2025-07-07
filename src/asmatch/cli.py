@@ -1,5 +1,6 @@
 """Command line interface for the asmatch tool."""
 
+import glob
 import argparse
 import json
 import logging
@@ -66,16 +67,18 @@ def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> Non
 
     start_time = time.time()
     snippets_added = 0
-    for filename in os.listdir(args.directory):
-        if filename.endswith((".asm", ".txt")):
-            name = os.path.splitext(filename)[0]
-            with open(
-                os.path.join(args.directory, filename), "r", encoding="utf-8"
-            ) as f:
-                code = f.read()
-            snippet = add_snippet(session, name, code, quiet=True)
-            if snippet:
-                snippets_added += 1
+    
+    # Use glob to find all .asm and .txt files
+    file_paths = glob.glob(os.path.join(args.directory, '**', '*.asm'), recursive=True)
+    file_paths += glob.glob(os.path.join(args.directory, '**', '*.txt'), recursive=True)
+
+    for file_path in file_paths:
+        name = os.path.splitext(os.path.basename(file_path))[0]
+        with open(file_path, "r", encoding="utf-8") as f:
+            code = f.read()
+        snippet = add_snippet(session, name, code, quiet=True)
+        if snippet:
+            snippets_added += 1
 
     end_time = time.time()
     time_elapsed = end_time - start_time
@@ -104,11 +107,11 @@ def cmd_list(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``list`` command."""
     start, end = 0, 0
     if args.range:
-        try:
-            start, end = map(int, args.range.split("-"))
-        except ValueError:
+        parts = args.range.split('-')
+        if len(parts) != 2 or not all(part.isdigit() for part in parts):
             logger.error("Error: Invalid range format. Use start-end (e.g., 10-30).")
             return
+        start, end = map(int, parts)
 
     snippets = list_snippets(session, start, end)
     if args.json:
