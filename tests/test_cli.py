@@ -27,6 +27,7 @@ class TestCLI(unittest.TestCase):
 
     def tearDown(self):
         """Clean up the database after each test."""
+        self.engine.dispose()
         os.remove(self.db_name)
 
     def run_command(self, command, input_data=None, extra_env=None):
