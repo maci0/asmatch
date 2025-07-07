@@ -82,9 +82,9 @@ default values.
 
 | Key               | Default | Description |
 |-------------------|--------:|-------------|
-| `lsh_threshold`   | `0.2`   | Minimum Jaccard similarity used when querying the LSH index. Lower values yield more candidates. |
+| `lsh_threshold`   | `0.5`   | Minimum Jaccard similarity used when querying the LSH index. Lower values yield more candidates. |
 | `num_permutations`| `128`   | Number of permutations used when building MinHash fingerprints. |
-| `top_n`           | `3`     | Number of matches returned by the `find` command. |
+| `top_n`           | `5`     | Number of matches returned by the `find` command. |
 
 **Example `config.toml`:**
 ```toml
