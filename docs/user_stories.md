@@ -71,6 +71,19 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 
 ---
 
+### Title: Compare two code snippets
+
+**As a** security researcher,
+**I want to** use the `compare` command to see a detailed comparison of two snippets,
+**so that I can** understand their structural and code-level similarities.
+
+**Acceptance Criteria:**
+- `asmatch compare <checksum1> <checksum2>` displays a side-by-side comparison.
+- The comparison includes Jaccard similarity, Levenshtein score, and shared token count.
+- The output can be formatted as JSON with `--json`.
+
+---
+
 ### Title: Remove a snippet name or alias
 
 **As a** database maintainer,
@@ -91,7 +104,7 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 **so that I can** understand the size and complexity of the dataset.
 
 **Acceptance Criteria:**
-- `asmatch stats` displays the total number of snippets, average snippet size, and vocabulary size.
+- `asmatch stats` displays the total number of snippets, average snippet size, vocabulary size, and average in-dataset similarity.
 - The output can be formatted as JSON with `--json`.
 
 ---

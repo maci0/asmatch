@@ -2,6 +2,7 @@
 import hashlib
 import json
 import pickle
+import random
 import time
 
 from datasketch import MinHash
@@ -212,11 +213,72 @@ def get_snippet_by_checksum(session: Session, checksum: str):
     """Retrieves a snippet by its checksum."""
     return Snippet.get_by_checksum(session, checksum)
 
+def compare_snippets(session: Session, checksum1: str, checksum2: str) -> dict:
+    """
+    Compares two snippets by their checksums and returns a dictionary of comparison metrics.
+    """
+    snippet1 = get_snippet_by_checksum(session, checksum1)
+    snippet2 = get_snippet_by_checksum(session, checksum2)
+
+    if not snippet1 or not snippet2:
+        return None
+
+    m1 = snippet1.get_minhash_obj()
+    m2 = snippet2.get_minhash_obj()
+    jaccard_similarity = m1.jaccard(m2)
+
+    levenshtein_score = fuzz.ratio(snippet1.code, snippet2.code)
+
+    tokens1 = set(get_tokens(snippet1.code, normalize=True))
+    tokens2 = set(get_tokens(snippet2.code, normalize=True))
+    shared_tokens = len(tokens1.intersection(tokens2))
+    
+    return {
+        "snippet1": {
+            "checksum": snippet1.checksum,
+            "names": snippet1.name_list,
+            "token_count": len(tokens1),
+        },
+        "snippet2": {
+            "checksum": snippet2.checksum,
+            "names": snippet2.name_list,
+            "token_count": len(tokens2),
+        },
+        "comparison": {
+            "jaccard_similarity": jaccard_similarity,
+            "levenshtein_score": levenshtein_score,
+            "shared_normalized_tokens": shared_tokens,
+        }
+    }
+
+def get_average_similarity(session: Session, sample_size: int = 100) -> float:
+    """
+    Estimates the average Jaccard similarity of the dataset by comparing a random sample of snippets.
+    """
+    snippets = Snippet.get_all(session)
+    if len(snippets) < 2:
+        return 1.0
+
+    if len(snippets) > sample_size:
+        snippets = random.sample(snippets, sample_size)
+
+    total_similarity = 0
+    num_comparisons = 0
+    
+    for i in range(len(snippets)):
+        for j in range(i + 1, len(snippets)):
+            m1 = snippets[i].get_minhash_obj()
+            m2 = snippets[j].get_minhash_obj()
+            total_similarity += m1.jaccard(m2)
+            num_comparisons += 1
+            
+    return total_similarity / num_comparisons if num_comparisons > 0 else 1.0
+
 def get_db_stats(session: Session):
     """Returns a dictionary of database statistics."""
     snippets = Snippet.get_all(session)
     if not snippets:
-        return {"num_snippets": 0, "avg_snippet_size": 0, "vocabulary_size": 0}
+        return {"num_snippets": 0, "avg_snippet_size": 0, "vocabulary_size": 0, "avg_similarity": 0.0}
 
     total_size = sum(len(s.code) for s in snippets)
     
@@ -228,6 +290,7 @@ def get_db_stats(session: Session):
         "num_snippets": len(snippets),
         "avg_snippet_size": total_size / len(snippets),
         "vocabulary_size": len(all_tokens),
+        "avg_similarity": get_average_similarity(session),
     }
 
 def list_snippets(session: Session, start: int = 0, end: int = 0):
