@@ -117,15 +117,15 @@ def main():
                 for filename in os.listdir(args.directory):
                     if filename.endswith((".asm", ".txt")):
                         name = os.path.splitext(filename)[0]
-                        with open(os.path.join(args.directory, filename), 'r') as f:
+                        with open(os.path.join(args.directory, filename), 'r', encoding='utf-8') as f:
                             code = f.read()
                         snippet = add_snippet(session, name, code, quiet=True)
                         if snippet:
                             snippets_added += 1
-                
+
                 end_time = time.time()
                 time_elapsed = end_time - start_time
-                
+
                 stats = {
                     "num_imported": snippets_added,
                     "time_elapsed": time_elapsed,
@@ -148,7 +148,7 @@ def main():
                 except ValueError:
                     print("Error: Invalid range format. Use start-end (e.g., 10-30).")
                     return
-            
+
             snippets = list_snippets(session, start, end)
             if args.json:
                 print(json.dumps([{"checksum": s.checksum, "names": s.name_list} for s in snippets], indent=2))
@@ -198,20 +198,20 @@ def main():
             query_string = args.query
             if args.file:
                 try:
-                    with open(args.file, 'r') as f:
+                    with open(args.file, 'r', encoding='utf-8') as f:
                         query_string = f.read()
                 except FileNotFoundError:
                     print(f"Error: File not found at {args.file}")
                     sys.exit(1)
-            
+
             num_candidates, matches = find_matches(
-                session, 
-                query_string, 
-                args.top_n, 
+                session,
+                query_string,
+                args.top_n,
                 args.threshold,
                 not args.no_normalization
             )
-            
+
             if args.json:
                 print(json.dumps({
                     "lsh_candidates": num_candidates,
@@ -236,17 +236,17 @@ def main():
                 config[args.key] = args.value
                 if not os.path.exists(os.path.dirname(CONFIG_PATH)):
                     os.makedirs(os.path.dirname(CONFIG_PATH))
-                with open(CONFIG_PATH, "w") as f:
+                with open(CONFIG_PATH, "w", encoding="utf-8") as f:
                     # A more robust implementation would use a TOML library to write
                     f.write(f"{args.key} = {args.value}\n")
                 print(f"Set {args.key} to {args.value}")
         elif args.command == "compare":
             comparison = compare_snippets(session, args.checksum1, args.checksum2)
-            
+
             if not comparison:
                 print("Error: One or both snippets could not be found.")
                 sys.exit(1)
-                
+
             if args.json:
                 print(json.dumps(comparison, indent=2))
             else:
