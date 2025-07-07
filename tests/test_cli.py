@@ -27,13 +27,14 @@ class TestCLI(unittest.TestCase):
         """Clean up the database after each test."""
         os.remove(self.db_name)
 
-    def run_command(self, command):
+    def run_command(self, command, input_data=None):
         """Helper function to run a command and return the output."""
         result = subprocess.run(
             ["python", "-m", "asmatch.cli", *shlex.split(command)],
             shell=False,
             capture_output=True,
             text=True,
+            input=input_data,
             env={
                 **os.environ,
                 "PYTHONPATH": os.path.join(os.getcwd(), "src"),
@@ -73,6 +74,45 @@ class TestCLI(unittest.TestCase):
         with Session(self.engine) as session:
             snippet = Snippet.get_by_name(session, "new_snippet")
             self.assertIsNotNone(snippet)
+
+    def test_delete_command(self):
+        """Test removing a snippet name via the rm/del commands."""
+        # Add an alias to delete
+        self.run_command("add temp_alias 'MOV EAX, 1'")
+
+        # Confirm the alias exists
+        with Session(self.engine) as session:
+            snippet = Snippet.get_by_name(session, "temp_alias")
+            self.assertIsNotNone(snippet)
+            self.assertIn("temp_alias", snippet.name_list)
+
+        # Run the rm command with confirmation
+        result = self.run_command("rm temp_alias", input_data="y\n")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Removed", result.stdout)
+
+        # Verify the alias has been removed
+        with Session(self.engine) as session:
+            snippet = Snippet.get_by_name(session, "temp_alias")
+            self.assertIsNone(snippet)
+            # Original snippet should still exist
+            orig = Snippet.get_by_name(session, "test_snippet")
+            self.assertIsNotNone(orig)
+
+    def test_compare_command(self):
+        """Test comparing two snippets for similarity metrics."""
+        # Add a second snippet to compare
+        self.run_command("add another_snippet 'MOV EAX, 2'")
+        with Session(self.engine) as session:
+            s1 = Snippet.get_by_name(session, "test_snippet")
+            s2 = Snippet.get_by_name(session, "another_snippet")
+            checksum1 = s1.checksum
+            checksum2 = s2.checksum
+
+        result = self.run_command(f"compare {checksum1} {checksum2}")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Jaccard Similarity", result.stdout)
+        self.assertIn("Levenshtein Score", result.stdout)
 
 
 if __name__ == "__main__":
