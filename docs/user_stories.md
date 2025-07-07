@@ -17,6 +17,7 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 - The user can provide the query from a file with `--file`.
 - The output can be formatted as JSON with `--json`.
 - The LSH cache is used to speed up searches.
+- The user can disable normalization with `--no-normalization`.
 
 ---
 
