@@ -1,8 +1,8 @@
 """Utilities for caching and loading the MinHash LSH index."""
 
+import logging
 import os
 import pickle
-import logging
 
 from datasketch import MinHashLSH
 from sqlmodel import Session, func, select
@@ -23,14 +23,15 @@ def get_lsh_cache_path(threshold: float) -> str:
 def get_db_checksum(session: Session) -> str:
     """Return a checksum representing the current database state."""
     # Pylint mis-identifies `func.count` as non-callable in SQLModel
-    count = session.exec(select(func.count(Snippet.checksum))).one()  # pylint: disable=not-callable
+    count = session.exec(select(func.count(Snippet.checksum))).one()  # type: ignore[arg-type]  # pylint: disable=not-callable
     if count == 0:
         return "empty"
 
     # `desc` is a SQLAlchemy method generated at runtime
     last_snippet = session.exec(
-        select(Snippet).order_by(Snippet.checksum.desc())  # pylint: disable=no-member
+        select(Snippet).order_by(Snippet.checksum.desc())  # type: ignore[attr-defined]  # pylint: disable=no-member
     ).first()
+    assert last_snippet is not None
     return f"{count}-{last_snippet.checksum}"
 
 

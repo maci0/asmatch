@@ -2,7 +2,7 @@
 
 import json
 import pickle
-from typing import List
+from typing import Sequence
 
 from datasketch import MinHash
 from sqlmodel import Field, Session, SQLModel, select
@@ -17,17 +17,17 @@ class Snippet(SQLModel, table=True):
     minhash: bytes
 
     @property
-    def name_list(self) -> List[str]:
+    def name_list(self) -> list[str]:
         """Return the list of alias names for the snippet."""
         return json.loads(self.names)
 
     @classmethod
-    def get_by_checksum(cls, session: Session, checksum: str) -> "Snippet":
+    def get_by_checksum(cls, session: Session, checksum: str) -> "Snippet | None":
         """Retrieve a snippet by its checksum."""
         return session.get(cls, checksum)
 
     @classmethod
-    def get_by_name(cls, session: Session, name: str) -> "Snippet":
+    def get_by_name(cls, session: Session, name: str) -> "Snippet | None":
         """Return the snippet containing the given name, if any."""
         snippets = session.exec(select(cls)).all()
         for snippet in snippets:
@@ -36,7 +36,7 @@ class Snippet(SQLModel, table=True):
         return None
 
     @classmethod
-    def get_all(cls, session: Session) -> list["Snippet"]:
+    def get_all(cls, session: Session) -> Sequence["Snippet"]:
         """Return all snippets in the database."""
         return session.exec(select(cls)).all()
 
