@@ -218,9 +218,9 @@ def main():
                 stats = {
                     "num_imported": snippets_added,
                     "time_elapsed": time_elapsed,
-                    "avg_time_per_snippet": time_elapsed / snippets_added
-                    if snippets_added > 0
-                    else 0,
+                    "avg_time_per_snippet": (
+                        time_elapsed / snippets_added if snippets_added > 0 else 0
+                    ),
                 }
 
                 if args.json:
@@ -243,7 +243,9 @@ def main():
                 try:
                     start, end = map(int, args.range.split("-"))
                 except ValueError:
-                    logger.error("Error: Invalid range format. Use start-end (e.g., 10-30).")
+                    logger.error(
+                        "Error: Invalid range format. Use start-end (e.g., 10-30)."
+                    )
                     return
 
             snippets = list_snippets(session, start, end)
@@ -259,7 +261,9 @@ def main():
                 )
             else:
                 for snippet in snippets:
-                    logger.info("Checksum: %s, Names: %s", snippet.checksum, snippet.name_list)
+                    logger.info(
+                        "Checksum: %s, Names: %s", snippet.checksum, snippet.name_list
+                    )
         elif args.command == "show":
             snippet = get_snippet_by_checksum(session, args.checksum)
             if snippet:
