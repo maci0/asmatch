@@ -1,8 +1,8 @@
 """Utilities for caching and loading the MinHash LSH index."""
 
+import logging
 import os
 import pickle
-import logging
 
 from datasketch import MinHashLSH
 from sqlmodel import Session, func, select
