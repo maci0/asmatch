@@ -29,18 +29,23 @@ class TestCLI(unittest.TestCase):
         """Clean up the database after each test."""
         os.remove(self.db_name)
 
-    def run_command(self, command):
+    def run_command(self, command, input_data=None, extra_env=None):
         """Helper function to run a command and return the output."""
+        env = {
+            **os.environ,
+            "PYTHONPATH": os.path.join(os.getcwd(), "src"),
+            "DATABASE_URL": f"sqlite:///{self.db_name}",
+        }
+        if extra_env:
+            env.update(extra_env)
+
         result = subprocess.run(
             ["python", "-m", "asmatch.cli", *shlex.split(command)],
             shell=False,
             capture_output=True,
             text=True,
-            env={
-                **os.environ,
-                "PYTHONPATH": os.path.join(os.getcwd(), "src"),
-                "DATABASE_URL": f"sqlite:///{self.db_name}",
-            },
+            input=input_data,
+            env=env,
             check=False,
         )
         return result
@@ -114,6 +119,41 @@ class TestCLI(unittest.TestCase):
         result = self.run_command("--quiet stats")
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout.strip(), "")
+
+    def test_config_set_and_list(self):
+        """`config list` should show values set via `config set`."""
+        with tempfile.TemporaryDirectory() as home:
+            env = {"HOME": home}
+            set_result = self.run_command(
+                "config set lsh_threshold 0.6", extra_env=env
+            )
+            self.assertEqual(set_result.returncode, 0)
+
+            list_result = self.run_command("config list", extra_env=env)
+            self.assertEqual(list_result.returncode, 0)
+            self.assertIn("lsh_threshold = 0.6", list_result.stdout)
+            self.assertIn("top_n = 5", list_result.stdout)
+
+    def test_reindex_command(self):
+        """`reindex` should run when confirmation is provided."""
+        result = self.run_command("reindex", input_data="y\n")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Snippets re-indexed: 1", result.stdout)
+
+    def test_delete_name_with_confirmation(self):
+        """Removing a name after confirmation should update the database."""
+        # Add a second alias so the snippet isn't deleted entirely
+        with Session(self.engine) as session:
+            add_snippet(session, "alias2", "MOV EAX, 1", quiet=True)
+
+        rm_result = self.run_command("rm test_snippet", input_data="y\n")
+        self.assertEqual(rm_result.returncode, 0)
+
+        with Session(self.engine) as session:
+            snippet = Snippet.get_by_name(session, "test_snippet")
+            self.assertIsNone(snippet)
+            remaining = Snippet.get_by_name(session, "alias2")
+            self.assertIsNotNone(remaining)
 
 
 if __name__ == "__main__":
