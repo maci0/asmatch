@@ -307,22 +307,7 @@ def add_config_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser_config.set_defaults(func=cmd_config)
 
 
-def get_parser(config: dict) -> argparse.ArgumentParser:
-    """Return the top-level argument parser."""
-    parser = argparse.ArgumentParser(
-        description="A CLI for finding similar assembly code snippets.",
-        formatter_class=argparse.RawTextHelpFormatter,
-    )
-    verbosity_group = parser.add_mutually_exclusive_group()
-    verbosity_group.add_argument(
-        "-q", "--quiet", action="store_true", help="Suppress informational output."
-    )
-    verbosity_group.add_argument(
-        "-v", "--verbose", action="store_true", help="Increase output verbosity."
-    )
-
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
+def add_add_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser_add = subparsers.add_parser(
         "add", help="Add a new snippet or an alias to existing code."
     )
@@ -330,6 +315,8 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     parser_add.add_argument("code", help="The assembly code of the snippet.")
     parser_add.set_defaults(func=cmd_add)
 
+
+def add_import_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser_import = subparsers.add_parser(
         "import", help="Bulk import snippets from a directory."
     )
@@ -341,6 +328,8 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     )
     parser_import.set_defaults(func=cmd_import)
 
+
+def add_list_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser_list = subparsers.add_parser(
         "list", aliases=["ls"], help="List all snippets."
     )
@@ -352,6 +341,8 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     )
     parser_list.set_defaults(func=cmd_list)
 
+
+def add_show_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser_show = subparsers.add_parser(
         "show", help="Show detailed information for a specific snippet."
     )
@@ -361,6 +352,8 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     )
     parser_show.set_defaults(func=cmd_show)
 
+
+def add_rm_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser_rm = subparsers.add_parser(
         "rm",
         aliases=["del"],
@@ -369,6 +362,38 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     parser_rm.add_argument("name", help="The name of the snippet to remove.")
     parser_rm.set_defaults(func=cmd_rm)
 
+
+def add_stats_subparser(subparsers: argparse._SubParsersAction) -> None:
+    parser_stats = subparsers.add_parser("stats", help="Show database statistics.")
+    parser_stats.add_argument(
+        "--json", action="store_true", help="Output in JSON format."
+    )
+    parser_stats.set_defaults(func=cmd_stats)
+
+
+def add_reindex_subparser(subparsers: argparse._SubParsersAction) -> None:
+    parser_reindex = subparsers.add_parser(
+        "reindex", help="Re-calculates all MinHashes in the database."
+    )
+    parser_reindex.add_argument(
+        "--json", action="store_true", help="Output in JSON format."
+    )
+    parser_reindex.set_defaults(func=cmd_reindex)
+
+
+def add_compare_subparser(subparsers: argparse._SubParsersAction) -> None:
+    parser_compare = subparsers.add_parser(
+        "compare", help="Compare two snippets directly."
+    )
+    parser_compare.add_argument("checksum1", help="The checksum of the first snippet.")
+    parser_compare.add_argument("checksum2", help="The checksum of the second snippet.")
+    parser_compare.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
+    parser_compare.set_defaults(func=cmd_compare)
+
+
+def add_find_subparser(subparsers: argparse._SubParsersAction, config: dict) -> None:
     parser_find = subparsers.add_parser("find", help="Find similar snippets.")
     find_group = parser_find.add_mutually_exclusive_group()
     find_group.add_argument("--query", help="The query string to search for.")
@@ -399,31 +424,34 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     )
     parser_find.set_defaults(func=cmd_find)
 
-    parser_stats = subparsers.add_parser("stats", help="Show database statistics.")
-    parser_stats.add_argument(
-        "--json", action="store_true", help="Output in JSON format."
-    )
-    parser_stats.set_defaults(func=cmd_stats)
 
-    parser_reindex = subparsers.add_parser(
-        "reindex", help="Re-calculates all MinHashes in the database."
+def get_parser(config: dict) -> argparse.ArgumentParser:
+    """Return the top-level argument parser."""
+    parser = argparse.ArgumentParser(
+        description="A CLI for finding similar assembly code snippets.",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
-    parser_reindex.add_argument(
-        "--json", action="store_true", help="Output in JSON format."
+    verbosity_group = parser.add_mutually_exclusive_group()
+    verbosity_group.add_argument(
+        "-q", "--quiet", action="store_true", help="Suppress informational output."
     )
-    parser_reindex.set_defaults(func=cmd_reindex)
+    verbosity_group.add_argument(
+        "-v", "--verbose", action="store_true", help="Increase output verbosity."
+    )
 
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Add subparsers for each command
+    add_add_subparser(subparsers)
+    add_import_subparser(subparsers)
+    add_list_subparser(subparsers)
+    add_show_subparser(subparsers)
+    add_rm_subparser(subparsers)
+    add_find_subparser(subparsers, config)
+    add_stats_subparser(subparsers)
+    add_reindex_subparser(subparsers)
     add_config_subparser(subparsers)
-
-    parser_compare = subparsers.add_parser(
-        "compare", help="Compare two snippets directly."
-    )
-    parser_compare.add_argument("checksum1", help="The checksum of the first snippet.")
-    parser_compare.add_argument("checksum2", help="The checksum of the second snippet.")
-    parser_compare.add_argument(
-        "--json", action="store_true", help="Output results in JSON format."
-    )
-    parser_compare.set_defaults(func=cmd_compare)
+    add_compare_subparser(subparsers)
 
     return parser
 
