@@ -1,5 +1,5 @@
 
-# asmatch/cli.py
+"""Command line interface for the asmatch tool."""
 import argparse
 import json
 import os
@@ -32,6 +32,7 @@ def confirm_action(prompt: str) -> bool:
             return False
 
 def main():
+    """Entry point for the asmatch command line interface."""
     # Load configuration
     config = load_config()
 

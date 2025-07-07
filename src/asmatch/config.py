@@ -1,5 +1,6 @@
 
-# asmatch/config.py
+"""Configuration loader for asmatch."""
+
 import os
 
 import tomli
@@ -13,8 +14,8 @@ DEFAULTS = {
     "top_n": 3,
 }
 
-def load_config():
-    """Loads the user's configuration file, if it exists."""
+def load_config() -> dict:
+    """Load the user's configuration file if it exists."""
     if not os.path.exists(CONFIG_PATH):
         return DEFAULTS
         
