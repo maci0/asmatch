@@ -1,5 +1,4 @@
-
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="asmatch",
@@ -11,7 +10,11 @@ setup(
         "pygments",
         "datasketch",
         "rapidfuzz",
+        "tomli",
     ],
+    extras_require={
+        "dev": ["ruff", "black", "unittest-xml-reporting"],
+    },
     entry_points={
         "console_scripts": [
             "asmatch=asmatch.cli:main",

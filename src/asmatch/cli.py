@@ -1,23 +1,24 @@
-
 # asmatch/cli.py
 import argparse
-import os
 import json
+import os
 import sys
 import time
-from textwrap import dedent
+
 from sqlmodel import Session
-from .database import engine, create_db_and_tables
+
+from .config import CONFIG_PATH, load_config
 from .core import (
     add_snippet,
-    find_matches,
     delete_snippet,
-    update_snippet,
-    reindex_database,
-    get_snippet_by_checksum,
+    find_matches,
     get_db_stats,
+    get_snippet_by_checksum,
     list_snippets,
+    reindex_database,
 )
+from .database import create_db_and_tables, engine
+
 
 def confirm_action(prompt: str) -> bool:
     """Asks the user for confirmation."""
@@ -29,197 +30,157 @@ def confirm_action(prompt: str) -> bool:
             return False
 
 def main():
+    # Load configuration
+    config = load_config()
+
     # Ensure the database and tables are created
     create_db_and_tables()
 
-    epilog = dedent("""\
-    Examples:
-      # Create a new snippet from a string
-      asmatch create snippet my_func "MOV EAX, 1; RET"
-
-      # Get a list of all snippets
-      asmatch get snippets
-
-      # Get database statistics
-      asmatch db stats
-
-      # Re-index the database
-      asmatch db reindex
-      
-      # Find snippets similar to a query string
-      asmatch find --query "MOV EAX"
-    """)
-
     parser = argparse.ArgumentParser(
-        description="A CLI for asmatch, in the style of kubectl.",
-        epilog=epilog,
+        description="A CLI for finding similar assembly code snippets.",
         formatter_class=argparse.RawTextHelpFormatter,
     )
-    subparsers = parser.add_subparsers(dest="verb", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # --- Create command ---
-    parser_create = subparsers.add_parser("create", help="Create a resource.")
-    create_subparsers = parser_create.add_subparsers(dest="noun", required=True)
-    # create snippet
-    parser_create_snippet = create_subparsers.add_parser("snippet", aliases=["snip"], help="Create a new snippet.")
-    parser_create_snippet.add_argument("name", help="The name of the snippet.")
-    parser_create_snippet.add_argument("code", help="The assembly code of the snippet.")
-    # create from-dir
-    parser_create_from_dir = create_subparsers.add_parser("from-dir", help="Bulk import snippets from a directory.")
-    parser_create_from_dir.add_argument("directory", help="The directory containing .asm or .txt files.")
-    parser_create_from_dir.add_argument("--json", action="store_true", help="Output results in JSON format.")
+    # --- Add command ---
+    parser_add = subparsers.add_parser("add", help="Add a new snippet or an alias to existing code.")
+    parser_add.add_argument("name", help="The name or alias for the snippet.")
+    parser_add.add_argument("code", help="The assembly code of the snippet.")
 
-    # --- Get command ---
-    parser_get = subparsers.add_parser("get", help="Get one or more resources.")
-    get_subparsers = parser_get.add_subparsers(dest="noun", required=True)
-    # get snippets
-    parser_get_snippets = get_subparsers.add_parser("snippets", aliases=["snips"], help="Get a list of snippets.")
-    parser_get_snippets.add_argument("--range", help="A range of snippets to list (e.g., 10-30).")
-    parser_get_snippets.add_argument("--json", action="store_true", help="Output in JSON format.")
+    # --- Import command ---
+    parser_import = subparsers.add_parser("import", help="Bulk import snippets from a directory.")
+    parser_import.add_argument("directory", help="The directory containing .asm or .txt files.")
+    parser_import.add_argument("--json", action="store_true", help="Output results in JSON format.")
 
-    # --- Describe command ---
-    parser_describe = subparsers.add_parser("describe", help="Get detailed information about a resource.")
-    describe_subparsers = parser_describe.add_subparsers(dest="noun", required=True)
-    # describe snippet
-    parser_describe_snippet = describe_subparsers.add_parser("snippet", aliases=["snip"], help="Describe a snippet by its checksum.")
-    parser_describe_snippet.add_argument("checksum", help="The checksum of the snippet.")
-    parser_describe_snippet.add_argument("--json", action="store_true", help="Output in JSON format.")
+    # --- List command ---
+    parser_list = subparsers.add_parser("list", aliases=["ls"], help="List all snippets.")
+    parser_list.add_argument("--range", help="A range of snippets to list (e.g., 10-30).")
+    parser_list.add_argument("--json", action="store_true", help="Output in JSON format.")
 
-    # --- Delete command ---
-    parser_delete = subparsers.add_parser("delete", help="Delete a resource.")
-    delete_subparsers = parser_delete.add_subparsers(dest="noun", required=True)
-    # delete snippet
-    parser_delete_snippet = delete_subparsers.add_parser("snippet", aliases=["snip"], help="Delete a snippet by name.")
-    parser_delete_snippet.add_argument("name", help="The name of the snippet to delete.")
+    # --- Show command ---
+    parser_show = subparsers.add_parser("show", help="Show detailed information for a specific snippet.")
+    parser_show.add_argument("checksum", help="The checksum of the snippet.")
+    parser_show.add_argument("--json", action="store_true", help="Output in JSON format.")
 
-    # --- Update command ---
-    parser_update = subparsers.add_parser("update", help="Update a resource.")
-    update_subparsers = parser_update.add_subparsers(dest="noun", required=True)
-    # update snippet
-    parser_update_snippet = update_subparsers.add_parser("snippet", aliases=["snip"], help="Update an existing snippet.")
-    parser_update_snippet.add_argument("name", help="The name of the snippet to update.")
-    parser_update_snippet.add_argument("code", help="The new assembly code.")
+    # --- Remove command ---
+    parser_rm = subparsers.add_parser("rm", aliases=["del"], help="Remove a snippet name. If it's the last name, the snippet is deleted.")
+    parser_rm.add_argument("name", help="The name of the snippet to remove.")
 
-    # --- DB command ---
-    parser_db = subparsers.add_parser("db", help="Manage the database.")
-    db_subparsers = parser_db.add_subparsers(dest="noun", required=True)
-    # db stats
-    parser_db_stats = db_subparsers.add_parser("stats", help="Show database statistics.")
-    parser_db_stats.add_argument("--json", action="store_true", help="Output in JSON format.")
-    # db reindex
-    parser_db_reindex = db_subparsers.add_parser("reindex", help="Re-calculates all MinHashes in the database.")
-    parser_db_reindex.add_argument("--json", action="store_true", help="Output in JSON format.")
-
-    # --- Find command (custom verb) ---
+    # --- Find command ---
     parser_find = subparsers.add_parser("find", help="Find similar snippets.")
     find_group = parser_find.add_mutually_exclusive_group(required=True)
     find_group.add_argument("--query", help="The query string to search for.")
     find_group.add_argument("--file", help="Path to a file containing the query.")
-    parser_find.add_argument("--top-n", type=int, default=3, help="Number of top matches to return.")
-    parser_find.add_argument("--threshold", type=float, default=0.2, help="LSH threshold override (0.0-1.0, default: 0.2).")
+    parser_find.add_argument("--top-n", type=int, default=config.get("top_n"), help=f"Number of top matches to return (default: {config.get('top_n')}).")
+    parser_find.add_argument("--threshold", type=float, default=config.get("lsh_threshold"), help=f"LSH threshold override (0.0-1.0, default: {config.get('lsh_threshold')}).")
     parser_find.add_argument("--json", action="store_true", help="Output results in JSON format.")
     parser_find.add_argument("--no-normalization", action="store_true", help="Disable token normalization for this query.")
+
+    # --- Stats command ---
+    parser_stats = subparsers.add_parser("stats", help="Show database statistics.")
+    parser_stats.add_argument("--json", action="store_true", help="Output in JSON format.")
+
+    # --- Reindex command ---
+    parser_reindex = subparsers.add_parser("reindex", help="Re-calculates all MinHashes in the database.")
+    parser_reindex.add_argument("--json", action="store_true", help="Output in JSON format.")
+
+    # --- Config command ---
+    parser_config = subparsers.add_parser("config", help="Manage user configuration.")
+    config_subparsers = parser_config.add_subparsers(dest="config_command", required=True)
+    config_subparsers.add_parser("path", help="Show the path to the config file.")
+    config_subparsers.add_parser("list", help="List current settings.")
+    parser_config_set = config_subparsers.add_parser("set", help="Set a configuration value.")
+    parser_config_set.add_argument("key", choices=["lsh_threshold", "top_n"], help="The configuration key to set.")
+    parser_config_set.add_argument("value", help="The value to set.")
 
 
     args = parser.parse_args()
 
     with Session(engine) as session:
-        if args.verb == "create":
-            if args.noun in ["snippet", "snip"]:
-                snippet = add_snippet(session, args.name, args.code)
-                if snippet:
-                    print(f"Snippet '{snippet.name}' created with checksum: {snippet.checksum}")
-            elif args.noun == "from-dir":
-                if confirm_action(f"Are you sure you want to import all snippets from '{args.directory}'?"):
-                    start_time = time.time()
-                    snippets_added = 0
-                    for filename in os.listdir(args.directory):
-                        if filename.endswith((".asm", ".txt")):
-                            name = os.path.splitext(filename)[0]
-                            with open(os.path.join(args.directory, filename), 'r') as f:
-                                code = f.read()
-                            snippet = add_snippet(session, name, code)
-                            if snippet:
-                                snippets_added += 1
-                    
-                    end_time = time.time()
-                    time_elapsed = end_time - start_time
-                    
-                    stats = {
-                        "num_imported": snippets_added,
-                        "time_elapsed": time_elapsed,
-                        "avg_time_per_snippet": time_elapsed / snippets_added if snippets_added > 0 else 0,
-                    }
-
-                    if args.json:
-                        print(json.dumps(stats, indent=2))
-                    else:
-                        print("--- Import Complete ---")
-                        print(f"  Snippets imported: {stats['num_imported']}")
-                        print(f"  Total time elapsed: {stats['time_elapsed']:.4f} seconds")
-                        if stats['num_imported'] > 0:
-                            print(f"  Average time per snippet: {stats['avg_time_per_snippet'] * 1000:.4f} ms")
-
-        elif args.verb == "get":
-            if args.noun in ["snippets", "snips"]:
-                start, end = 0, 0
-                if args.range:
-                    try:
-                        start, end = map(int, args.range.split('-'))
-                    except ValueError:
-                        print("Error: Invalid range format. Use start-end (e.g., 10-30).")
-                        return
+        if args.command == "add":
+            snippet = add_snippet(session, args.name, args.code)
+            if snippet:
+                print(f"Snippet with checksum {snippet.checksum} now has names: {snippet.name_list}")
+        elif args.command == "import":
+            if confirm_action(f"Are you sure you want to import all snippets from '{args.directory}'?"):
+                start_time = time.time()
+                snippets_added = 0
+                for filename in os.listdir(args.directory):
+                    if filename.endswith((".asm", ".txt")):
+                        name = os.path.splitext(filename)[0]
+                        with open(os.path.join(args.directory, filename), 'r') as f:
+                            code = f.read()
+                        snippet = add_snippet(session, name, code, quiet=True)
+                        if snippet:
+                            snippets_added += 1
                 
-                snippets = list_snippets(session, start, end)
-                if args.json:
-                    print(json.dumps([{"checksum": s.checksum, "name": s.name} for s in snippets], indent=2))
-                else:
-                    for snippet in snippets:
-                        print(f"Checksum: {snippet.checksum}, Name: {snippet.name}")
-        elif args.verb == "describe":
-            if args.noun in ["snippet", "snip"]:
-                snippet = get_snippet_by_checksum(session, args.checksum)
-                if snippet:
-                    if args.json:
-                        print(json.dumps({"checksum": snippet.checksum, "name": snippet.name, "code": snippet.code}, indent=2))
-                    else:
-                        print(f"Checksum: {snippet.checksum}")
-                        print(f"Name: {snippet.name}")
-                        print(f"Code:\n{snippet.code}")
-                else:
-                    print(f"Snippet with checksum {args.checksum} not found.")
-        elif args.verb == "delete":
-            if args.noun in ["snippet", "snip"]:
-                if confirm_action(f"Are you sure you want to delete snippet '{args.name}'?"):
-                    if delete_snippet(session, args.name):
-                        print(f"Snippet '{args.name}' deleted.")
-        elif args.verb == "update":
-            if args.noun in ["snippet", "snip"]:
-                snippet = update_snippet(session, args.name, args.code)
-                if snippet:
-                    print(f"Snippet '{args.name}' updated.")
-        elif args.verb == "db":
-            if args.noun == "stats":
-                stats = get_db_stats(session)
+                end_time = time.time()
+                time_elapsed = end_time - start_time
+                
+                stats = {
+                    "num_imported": snippets_added,
+                    "time_elapsed": time_elapsed,
+                    "avg_time_per_snippet": time_elapsed / snippets_added if snippets_added > 0 else 0,
+                }
+
                 if args.json:
                     print(json.dumps(stats, indent=2))
                 else:
-                    print("--- Database Statistics ---")
-                    print(f"  Number of snippets: {stats['num_snippets']}")
-                    print(f"  Average snippet size: {stats['avg_snippet_size']:.2f} characters")
-                    print(f"  Vocabulary size: {stats['vocabulary_size']} unique tokens")
-            elif args.noun == "reindex":
-                if confirm_action("Are you sure you want to re-index the entire database? This may take a while."):
-                    stats = reindex_database(session)
-                    if args.json:
-                        print(json.dumps(stats, indent=2))
-                    else:
-                        print("--- Re-indexing Complete ---")
-                        print(f"  Snippets re-indexed: {stats['num_reindexed']}")
-                        print(f"  Total time elapsed: {stats['time_elapsed']:.4f} seconds")
-                        if stats['num_reindexed'] > 0:
-                            print(f"  Average time per snippet: {stats['avg_time_per_snippet'] * 1000:.4f} ms")
-        elif args.verb == "find":
+                    print("--- Import Complete ---")
+                    print(f"  Snippets processed: {stats['num_imported']}")
+                    print(f"  Total time elapsed: {stats['time_elapsed']:.4f} seconds")
+                    if stats['num_imported'] > 0:
+                        print(f"  Average time per snippet: {stats['avg_time_per_snippet'] * 1000:.4f} ms")
+        elif args.command in ["list", "ls"]:
+            start, end = 0, 0
+            if args.range:
+                try:
+                    start, end = map(int, args.range.split('-'))
+                except ValueError:
+                    print("Error: Invalid range format. Use start-end (e.g., 10-30).")
+                    return
+            
+            snippets = list_snippets(session, start, end)
+            if args.json:
+                print(json.dumps([{"checksum": s.checksum, "names": s.name_list} for s in snippets], indent=2))
+            else:
+                for snippet in snippets:
+                    print(f"Checksum: {snippet.checksum}, Names: {snippet.name_list}")
+        elif args.command == "show":
+            snippet = get_snippet_by_checksum(session, args.checksum)
+            if snippet:
+                if args.json:
+                    print(json.dumps({"checksum": snippet.checksum, "names": snippet.name_list, "code": snippet.code}, indent=2))
+                else:
+                    print(f"Checksum: {snippet.checksum}")
+                    print(f"Names: {snippet.name_list}")
+                    print(f"Code:\n{snippet.code}")
+            else:
+                print(f"Snippet with checksum {args.checksum} not found.")
+        elif args.command in ["rm", "del"]:
+            if confirm_action(f"Are you sure you want to delete the name '{args.name}'?"):
+                delete_snippet(session, args.name)
+        elif args.command == "stats":
+            stats = get_db_stats(session)
+            if args.json:
+                print(json.dumps(stats, indent=2))
+            else:
+                print("--- Database Statistics ---")
+                print(f"  Number of snippets: {stats['num_snippets']}")
+                print(f"  Average snippet size: {stats['avg_snippet_size']:.2f} characters")
+                print(f"  Vocabulary size: {stats['vocabulary_size']} unique tokens")
+        elif args.command == "reindex":
+            if confirm_action("Are you sure you want to re-index the entire database? This may take a while."):
+                stats = reindex_database(session)
+                if args.json:
+                    print(json.dumps(stats, indent=2))
+                else:
+                    print("--- Re-indexing Complete ---")
+                    print(f"  Snippets re-indexed: {stats['num_reindexed']}")
+                    print(f"  Total time elapsed: {stats['time_elapsed']:.4f} seconds")
+                    if stats['num_reindexed'] > 0:
+                        print(f"  Average time per snippet: {stats['avg_time_per_snippet'] * 1000:.4f} ms")
+        elif args.command == "find":
             if not 0.0 <= args.threshold < 0.99:
                 print("Error: --threshold must be between 0.0 and 0.98.")
                 sys.exit(1)
@@ -244,16 +205,31 @@ def main():
             if args.json:
                 print(json.dumps({
                     "lsh_candidates": num_candidates,
-                    "matches": [{"checksum": snippet.checksum, "name": snippet.name, "score": score} for snippet, score in matches]
+                    "matches": [{"checksum": snippet.checksum, "names": snippet.name_list, "score": score} for snippet, score in matches]
                 }, indent=2))
             else:
                 print(f"Found {num_candidates} candidates via LSH.")
                 if matches:
                     print("--- Top Matches ---")
                     for snippet, score in matches:
-                        print(f"  - Checksum: {snippet.checksum}, Name: {snippet.name}, Score: {score:.2f}")
+                        print(f"  - Checksum: {snippet.checksum}, Names: {snippet.name_list}, Score: {score:.2f}")
                 else:
                     print("No matches found after ranking.")
+        elif args.command == "config":
+            if args.config_command == "path":
+                print(CONFIG_PATH)
+            elif args.config_command == "list":
+                for key, value in config.items():
+                    print(f"{key} = {value}")
+            elif args.config_command == "set":
+                # This is a simplified implementation. A real one would be more robust.
+                config[args.key] = args.value
+                if not os.path.exists(os.path.dirname(CONFIG_PATH)):
+                    os.makedirs(os.path.dirname(CONFIG_PATH))
+                with open(CONFIG_PATH, "w") as f:
+                    # A more robust implementation would use a TOML library to write
+                    f.write(f"{args.key} = {args.value}\n")
+                print(f"Set {args.key} to {args.value}")
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,7 @@
 
 
-import random
 import os
+import random
 
 # --- Configuration ---
 NUM_FILES = 1000
@@ -89,7 +89,7 @@ def generate_files():
         # --- Assemble the final file content ---
         content = [
             f"; Function: {name}",
-            f"; Description: A randomly generated function.",
+            "; Description: A randomly generated function.",
             "section .text",
             f"global {name}",
             f"{name}:",

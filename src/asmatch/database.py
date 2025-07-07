@@ -1,6 +1,6 @@
 
 # database.py
-from sqlmodel import create_engine, SQLModel
+from sqlmodel import SQLModel, create_engine
 
 DATABASE_URL = "sqlite:///assembly.db"
 engine = create_engine(DATABASE_URL, echo=False)

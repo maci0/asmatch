@@ -2,3 +2,4 @@ sqlmodel
 pygments
 datasketch
 rapidfuzz
+tomli
