@@ -147,11 +147,10 @@ def find_matches(
     candidate_snippets = [
         Snippet.get_by_checksum(session, key) for key in candidate_keys
     ]
-    # Create a dictionary mapping checksum to the full snippet object
+    
+    # Create a dictionary mapping checksum to the full snippet object and code for fuzzy matching
     candidate_map = {s.checksum: s for s in candidate_snippets if s}
-    candidate_choices = {
-        checksum: snippet.code for checksum, snippet in candidate_map.items()
-    }
+    candidate_choices = {checksum: snippet.code for checksum, snippet in candidate_map.items()}
 
     top_matches_tuples = process.extract(
         query_string, candidate_choices, scorer=fuzz.ratio, limit=top_n
