@@ -1,4 +1,4 @@
-# asmatch/core.py
+"""Core functions for tokenizing and comparing assembly snippets."""
 import hashlib
 import json
 import pickle
@@ -24,10 +24,7 @@ lexer = NasmLexer()
 # --- Core Processing Functions ---
 
 def get_normalized_string(code_snippet: str) -> str:
-    """
-    Normalizes an assembly snippet to a canonical string representation
-    by removing comments and standardizing whitespace.
-    """
+    """Normalize an assembly snippet and return a canonical string."""
     tokens = lexer.get_tokens(code_snippet)
     # Join tokens, but only if they are not comments or pure whitespace
     return " ".join(
@@ -36,14 +33,12 @@ def get_normalized_string(code_snippet: str) -> str:
     ).strip()
 
 def get_checksum(code_snippet: str) -> str:
-    """Calculates the SHA256 checksum of a normalized code snippet."""
+    """Calculate the SHA256 checksum of a normalized code snippet."""
     normalized_string = get_normalized_string(code_snippet)
     return hashlib.sha256(normalized_string.encode('utf-8')).hexdigest()
 
 def get_tokens(code_snippet: str, normalize: bool = True):
-    """
-    Returns a list of tokens from a code snippet, with an option to disable normalization.
-    """
+    """Return a list of tokens from a code snippet."""
     tokens = lexer.get_tokens(code_snippet)
     output_tokens = []
     for ttype, value in tokens:
@@ -64,7 +59,7 @@ def get_tokens(code_snippet: str, normalize: bool = True):
     return output_tokens
 
 def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
-    """Takes assembly code, tokenizes it, and returns a MinHash object."""
+    """Return a MinHash object representing the given code snippet."""
     tokens = get_tokens(code_snippet, normalize)
     m = MinHash(num_perm=NUM_PERMUTATIONS)
     if not tokens:
@@ -76,10 +71,7 @@ def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
 # --- Application Logic Functions ---
 
 def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
-    """
-    Adds a new snippet to the database.
-    If the code already exists, it adds the new name as an alias.
-    """
+    """Add a new snippet or alias to the database."""
     checksum = get_checksum(code)
     
     existing_snippet_by_name = Snippet.get_by_name(session, name)
@@ -113,7 +105,7 @@ def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
     return new_snippet
 
 def find_matches(session: Session, query_string: str, top_n: int = 3, threshold: float = None, normalize: bool = True):
-    """Finds and prints top matches for a query."""
+    """Find and rank matches for a query string."""
     if threshold is None:
         threshold = LSH_THRESHOLD
         
@@ -152,9 +144,7 @@ def find_matches(session: Session, query_string: str, top_n: int = 3, threshold:
     return len(candidate_keys), top_matches
 
 def delete_snippet(session: Session, name: str, quiet: bool = False):
-    """
-    Deletes a name from a snippet. If it's the last name, deletes the snippet.
-    """
+    """Delete a name from a snippet or remove the snippet entirely."""
     snippet = Snippet.get_by_name(session, name)
     if not snippet:
         if not quiet:
@@ -179,12 +169,12 @@ def delete_snippet(session: Session, name: str, quiet: bool = False):
     return True
 
 def update_snippet(session: Session, name: str, new_code: str):
-    """This function is now deprecated in favor of the alias system."""
+    """Do nothing; this function is deprecated."""
     print("Warning: 'update snippet' is deprecated. Use create and delete for alias management.")
     return None
 
 def reindex_database(session: Session):
-    """Recalculates the MinHash for every snippet in the database."""
+    """Recalculate the MinHash for every snippet in the database."""
     start_time = time.time()
     snippets = Snippet.get_all(session)
     num_snippets = len(snippets)
@@ -210,13 +200,11 @@ def reindex_database(session: Session):
     }
 
 def get_snippet_by_checksum(session: Session, checksum: str):
-    """Retrieves a snippet by its checksum."""
+    """Return a snippet by its checksum."""
     return Snippet.get_by_checksum(session, checksum)
 
 def compare_snippets(session: Session, checksum1: str, checksum2: str) -> dict:
-    """
-    Compares two snippets by their checksums and returns a dictionary of comparison metrics.
-    """
+    """Compare two snippets and return similarity metrics."""
     snippet1 = get_snippet_by_checksum(session, checksum1)
     snippet2 = get_snippet_by_checksum(session, checksum2)
 
@@ -252,9 +240,7 @@ def compare_snippets(session: Session, checksum1: str, checksum2: str) -> dict:
     }
 
 def get_average_similarity(session: Session, sample_size: int = 100) -> float:
-    """
-    Estimates the average Jaccard similarity of the dataset by comparing a random sample of snippets.
-    """
+    """Estimate average Jaccard similarity from a random sample."""
     snippets = Snippet.get_all(session)
     if len(snippets) < 2:
         return 1.0
@@ -275,7 +261,7 @@ def get_average_similarity(session: Session, sample_size: int = 100) -> float:
     return total_similarity / num_comparisons if num_comparisons > 0 else 1.0
 
 def get_db_stats(session: Session):
-    """Returns a dictionary of database statistics."""
+    """Return a dictionary of database statistics."""
     snippets = Snippet.get_all(session)
     if not snippets:
         return {"num_snippets": 0, "avg_snippet_size": 0, "vocabulary_size": 0, "avg_similarity": 0.0}
@@ -294,7 +280,7 @@ def get_db_stats(session: Session):
     }
 
 def list_snippets(session: Session, start: int = 0, end: int = 0):
-    """Lists snippets, optionally within a given range."""
+    """List snippets, optionally within a given range."""
     if end > 0:
         return session.exec(select(Snippet).offset(start).limit(end - start)).all()
     return Snippet.get_all(session)
