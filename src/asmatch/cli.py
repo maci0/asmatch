@@ -197,19 +197,9 @@ def cmd_find(args: argparse.Namespace, session: Session, _config: dict) -> None:
 
     query_string = None
     if args.query:
-        if args.query == "-":
-            query_string = sys.stdin.read()
-        else:
-            query_string = args.query
+        query_string = args.query
     elif args.file:
-        try:
-            with open(args.file, "r", encoding="utf-8") as f:
-                query_string = f.read()
-        except FileNotFoundError:
-            logger.error("Error: File not found at %s", args.file)
-            sys.exit(1)
-    elif not sys.stdin.isatty():
-        query_string = sys.stdin.read()
+        query_string = args.file.read()
 
     if not query_string:
         logger.error("Error: No query provided. Use --query, --file, or stdin.")
@@ -379,7 +369,11 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     parser_find = subparsers.add_parser("find", help="Find similar snippets.")
     find_group = parser_find.add_mutually_exclusive_group()
     find_group.add_argument("--query", help="The query string to search for.")
-    find_group.add_argument("--file", help="Path to a file containing the query.")
+    find_group.add_argument(
+        "--file",
+        type=argparse.FileType("r", encoding="utf-8"),
+        help="Path to a file containing the query. Use '-' for stdin.",
+    )
     parser_find.add_argument(
         "--top-n",
         type=int,

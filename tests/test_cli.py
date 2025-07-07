@@ -72,7 +72,7 @@ class TestCLI(unittest.TestCase):
 
     def test_find_command_with_stdin(self):
         """Test the find command with stdin."""
-        result = self.run_command("find --query -", input_data="MOV EAX, 1")
+        result = self.run_command("find --file -", input_data="MOV EAX, 1")
         self.assertEqual(result.returncode, 0)
         self.assertIn("Top Matches", result.stdout)
         self.assertIn("test_snippet", result.stdout)
