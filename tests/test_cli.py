@@ -44,7 +44,6 @@ class TestCLI(unittest.TestCase):
             shell=False,
             capture_output=True,
             text=True,
-
             input=input_data,
             env=env,
             check=False,
@@ -156,7 +155,6 @@ class TestCLI(unittest.TestCase):
             cache_file = os.path.join(cache_dir, "lsh_0.50.pkl")
             self.assertTrue(os.path.exists(cache_file))
 
-
     def test_quiet_option(self):
         """Test that --quiet suppresses informational output."""
         result = self.run_command("--quiet stats")
@@ -167,9 +165,7 @@ class TestCLI(unittest.TestCase):
         """`config list` should show values set via `config set`."""
         with tempfile.TemporaryDirectory() as home:
             env = {"HOME": home}
-            set_result = self.run_command(
-                "config set lsh_threshold 0.6", extra_env=env
-            )
+            set_result = self.run_command("config set lsh_threshold 0.6", extra_env=env)
             self.assertEqual(set_result.returncode, 0)
 
             list_result = self.run_command("config list", extra_env=env)
