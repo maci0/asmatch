@@ -37,7 +37,6 @@ def confirm_action(prompt: str) -> bool:
 
 def main():
     """Entry point for the asmatch command line interface."""
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     # Load configuration
     config = load_config()
 
@@ -47,6 +46,19 @@ def main():
     parser = argparse.ArgumentParser(
         description="A CLI for finding similar assembly code snippets.",
         formatter_class=argparse.RawTextHelpFormatter,
+    )
+    verbosity_group = parser.add_mutually_exclusive_group()
+    verbosity_group.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress informational output.",
+    )
+    verbosity_group.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Increase output verbosity.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -162,6 +174,15 @@ def main():
     )
 
     args = parser.parse_args()
+
+    log_level = logging.INFO
+    if args.quiet:
+        log_level = logging.WARNING
+    elif args.verbose:
+        log_level = logging.DEBUG
+
+    logging.basicConfig(level=log_level, stream=sys.stdout)
+    logger.debug("Running command: %s", args.command)
 
     with Session(engine) as session:
         if args.command == "add":

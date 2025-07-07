@@ -109,6 +109,11 @@ class TestCLI(unittest.TestCase):
 
             self.assertEqual(data.get("lsh_threshold"), 0.7)
             self.assertEqual(data.get("top_n"), 10)
+    def test_quiet_option(self):
+        """Test that --quiet suppresses informational output."""
+        result = self.run_command("--quiet stats")
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.strip(), "")
 
 
 if __name__ == "__main__":
