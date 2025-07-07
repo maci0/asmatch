@@ -346,3 +346,20 @@ def export_snippets(session: Session, export_dir: str) -> dict:
             time_elapsed / num_exported if num_exported > 0 else 0
         ),
     }
+
+def clean_cache() -> dict:
+    """Clean the LSH cache."""
+    start_time = time.time()
+    num_cleaned = 0
+    for filename in os.listdir("."):
+        if filename.startswith("lsh_") and filename.endswith(".pkl"):
+            os.remove(filename)
+            num_cleaned += 1
+
+    end_time = time.time()
+    time_elapsed = end_time - start_time
+
+    return {
+        "num_cleaned": num_cleaned,
+        "time_elapsed": time_elapsed,
+    }

@@ -13,6 +13,7 @@ from sqlmodel import Session
 from .config import CONFIG_PATH, load_config, update_config
 from .core import (
     add_snippet,
+    clean_cache,
     compare_snippets,
     delete_snippet,
     export_snippets,
@@ -22,6 +23,24 @@ from .core import (
     list_snippets,
     reindex_database,
 )
+
+def cmd_clean(args: argparse.Namespace, _session: Session, _config: dict) -> None:
+    """Handle the ``clean`` command."""
+    stats = clean_cache()
+    if args.json:
+        logger.info(json.dumps(stats, indent=2))
+    else:
+        logger.info("--- Cache Cleaned ---")
+        logger.info("  Files removed: %s", stats["num_cleaned"])
+        logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
+
+def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``clean`` subparser to ``subparsers``."""
+    parser_clean = subparsers.add_parser("clean", help="Clean the LSH cache.")
+    parser_clean.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
+    parser_clean.set_defaults(func=cmd_clean)
 from .database import create_db_and_tables, engine
 
 logger = logging.getLogger(__name__)
@@ -59,7 +78,7 @@ def cmd_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
 
 def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``export`` command."""
-    if not confirm_action(
+    if not args.force and not confirm_action(
         f"Are you sure you want to export all snippets to '{args.directory}'?"
     ):
         return
@@ -81,7 +100,7 @@ def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> Non
 
 def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``import`` command."""
-    if not confirm_action(
+    if not args.force and not confirm_action(
         f"Are you sure you want to import all snippets from '{args.directory}'?"
     ):
         return
@@ -297,16 +316,17 @@ def cmd_compare(args: argparse.Namespace, session: Session, _config: dict) -> No
         comp = comparison["comparison"]
 
         logger.info("--- Snippet Comparison ---")
-        logger.info("Snippet 1: %s (%s...)", s1["names"], s1["checksum"][:12])
-        logger.info("Snippet 2: %s (%s...)", s2["names"], s2["checksum"][:12])
+        logger.info("\033[1mSnippet 1:\033[0m %s (%s...)", s1["names"], s1["checksum"][:12])
+        logger.info("\033[1mSnippet 2:\033[0m %s (%s...)", s2["names"], s2["checksum"][:12])
         logger.info("\n--- Similarity Metrics ---")
         logger.info(
-            "  Jaccard Similarity (Structure): %.2f", comp["jaccard_similarity"]
+            "  \033[92mJaccard Similarity (Structure): %.2f\033[0m", comp["jaccard_similarity"]
         )
-        logger.info("  Levenshtein Score (Code):       %.2f", comp["levenshtein_score"])
+        logger.info("  \033[93mLevenshtein Score (Code):       %.2f\033[0m", comp["levenshtein_score"])
         logger.info(
-            "  Shared Normalized Tokens:       %s", comp["shared_normalized_tokens"]
+            "  \033[94mShared Normalized Tokens:       %s\033[0m", comp["shared_normalized_tokens"]
         )
+
 
 
 def add_config_subparser(subparsers: argparse._SubParsersAction) -> None:
@@ -348,6 +368,9 @@ def add_import_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser_import.add_argument(
         "--json", action="store_true", help="Output results in JSON format."
     )
+    parser_import.add_argument(
+        "--force", action="store_true", help="Skip confirmation prompts."
+    )
     parser_import.set_defaults(func=cmd_import)
 
 def add_export_subparser(subparsers: argparse._SubParsersAction) -> None:
@@ -360,6 +383,9 @@ def add_export_subparser(subparsers: argparse._SubParsersAction) -> None:
     )
     parser_export.add_argument(
         "--json", action="store_true", help="Output results in JSON format."
+    )
+    parser_export.add_argument(
+        "--force", action="store_true", help="Skip confirmation prompts."
     )
     parser_export.set_defaults(func=cmd_export)
 
@@ -495,6 +521,7 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     add_reindex_subparser(subparsers)
     add_config_subparser(subparsers)
     add_compare_subparser(subparsers)
+    add_clean_subparser(subparsers)
 
     return parser
 
