@@ -2,14 +2,14 @@
 
 import argparse
 import json
+import logging
 import os
 import sys
 import time
-import logging
 
 from sqlmodel import Session
 
-from .config import CONFIG_PATH, load_config
+from .config import CONFIG_PATH, load_config, update_config
 from .core import (
     add_snippet,
     compare_snippets,
@@ -382,14 +382,13 @@ def main():
                 for key, value in config.items():
                     logger.info("%s = %s", key, value)
             elif args.config_command == "set":
-                # This is a simplified implementation. A real one would be more robust.
-                config[args.key] = args.value
-                if not os.path.exists(os.path.dirname(CONFIG_PATH)):
-                    os.makedirs(os.path.dirname(CONFIG_PATH))
-                with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-                    # A more robust implementation would use a TOML library to write
-                    f.write(f"{args.key} = {args.value}\n")
-                logger.info("Set %s to %s", args.key, args.value)
+                if args.key == "lsh_threshold":
+                    value = float(args.value)
+                else:
+                    value = int(args.value)
+
+                config = update_config(args.key, value)
+                logger.info("Set %s to %s", args.key, value)
         elif args.command == "compare":
             comparison = compare_snippets(session, args.checksum1, args.checksum2)
 
