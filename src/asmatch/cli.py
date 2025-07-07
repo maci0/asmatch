@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import time
+import logging
 
 from sqlmodel import Session
 
@@ -21,6 +22,8 @@ from .core import (
 )
 from .database import create_db_and_tables, engine
 
+logger = logging.getLogger(__name__)
+
 
 def confirm_action(prompt: str) -> bool:
     """Asks the user for confirmation."""
@@ -34,6 +37,7 @@ def confirm_action(prompt: str) -> bool:
 
 def main():
     """Entry point for the asmatch command line interface."""
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     # Load configuration
     config = load_config()
 
@@ -163,8 +167,10 @@ def main():
         if args.command == "add":
             snippet = add_snippet(session, args.name, args.code)
             if snippet:
-                print(
-                    f"Snippet with checksum {snippet.checksum} now has names: {snippet.name_list}"
+                logger.info(
+                    "Snippet with checksum %s now has names: %s",
+                    snippet.checksum,
+                    snippet.name_list,
                 )
         elif args.command == "import":
             if confirm_action(
@@ -197,14 +203,18 @@ def main():
                 }
 
                 if args.json:
-                    print(json.dumps(stats, indent=2))
+                    logger.info(json.dumps(stats, indent=2))
                 else:
-                    print("--- Import Complete ---")
-                    print(f"  Snippets processed: {stats['num_imported']}")
-                    print(f"  Total time elapsed: {stats['time_elapsed']:.4f} seconds")
+                    logger.info("--- Import Complete ---")
+                    logger.info("  Snippets processed: %s", stats["num_imported"])
+                    logger.info(
+                        "  Total time elapsed: %.4f seconds",
+                        stats["time_elapsed"],
+                    )
                     if stats["num_imported"] > 0:
-                        print(
-                            f"  Average time per snippet: {stats['avg_time_per_snippet'] * 1000:.4f} ms"
+                        logger.info(
+                            "  Average time per snippet: %.4f ms",
+                            stats["avg_time_per_snippet"] * 1000,
                         )
         elif args.command in ["list", "ls"]:
             start, end = 0, 0
@@ -212,12 +222,12 @@ def main():
                 try:
                     start, end = map(int, args.range.split("-"))
                 except ValueError:
-                    print("Error: Invalid range format. Use start-end (e.g., 10-30).")
+                    logger.error("Error: Invalid range format. Use start-end (e.g., 10-30).")
                     return
 
             snippets = list_snippets(session, start, end)
             if args.json:
-                print(
+                logger.info(
                     json.dumps(
                         [
                             {"checksum": s.checksum, "names": s.name_list}
@@ -228,12 +238,12 @@ def main():
                 )
             else:
                 for snippet in snippets:
-                    print(f"Checksum: {snippet.checksum}, Names: {snippet.name_list}")
+                    logger.info("Checksum: %s, Names: %s", snippet.checksum, snippet.name_list)
         elif args.command == "show":
             snippet = get_snippet_by_checksum(session, args.checksum)
             if snippet:
                 if args.json:
-                    print(
+                    logger.info(
                         json.dumps(
                             {
                                 "checksum": snippet.checksum,
@@ -244,11 +254,11 @@ def main():
                         )
                     )
                 else:
-                    print(f"Checksum: {snippet.checksum}")
-                    print(f"Names: {snippet.name_list}")
-                    print(f"Code:\n{snippet.code}")
+                    logger.info("Checksum: %s", snippet.checksum)
+                    logger.info("Names: %s", snippet.name_list)
+                    logger.info("Code:\n%s", snippet.code)
             else:
-                print(f"Snippet with checksum {args.checksum} not found.")
+                logger.error("Snippet with checksum %s not found.", args.checksum)
         elif args.command in ["rm", "del"]:
             if confirm_action(
                 f"Are you sure you want to delete the name '{args.name}'?"
@@ -257,33 +267,44 @@ def main():
         elif args.command == "stats":
             stats = get_db_stats(session)
             if args.json:
-                print(json.dumps(stats, indent=2))
+                logger.info(json.dumps(stats, indent=2))
             else:
-                print("--- Database Statistics ---")
-                print(f"  Number of snippets: {stats['num_snippets']}")
-                print(
-                    f"  Average snippet size: {stats['avg_snippet_size']:.2f} characters"
+                logger.info("--- Database Statistics ---")
+                logger.info("  Number of snippets: %s", stats["num_snippets"])
+                logger.info(
+                    "  Average snippet size: %.2f characters",
+                    stats["avg_snippet_size"],
                 )
-                print(f"  Vocabulary size: {stats['vocabulary_size']} unique tokens")
-                print(f"  Average in-dataset similarity: {stats['avg_similarity']:.2f}")
+                logger.info(
+                    "  Vocabulary size: %s unique tokens",
+                    stats["vocabulary_size"],
+                )
+                logger.info(
+                    "  Average in-dataset similarity: %.2f",
+                    stats["avg_similarity"],
+                )
         elif args.command == "reindex":
             if confirm_action(
                 "Are you sure you want to re-index the entire database? This may take a while."
             ):
                 stats = reindex_database(session)
                 if args.json:
-                    print(json.dumps(stats, indent=2))
+                    logger.info(json.dumps(stats, indent=2))
                 else:
-                    print("--- Re-indexing Complete ---")
-                    print(f"  Snippets re-indexed: {stats['num_reindexed']}")
-                    print(f"  Total time elapsed: {stats['time_elapsed']:.4f} seconds")
+                    logger.info("--- Re-indexing Complete ---")
+                    logger.info("  Snippets re-indexed: %s", stats["num_reindexed"])
+                    logger.info(
+                        "  Total time elapsed: %.4f seconds",
+                        stats["time_elapsed"],
+                    )
                     if stats["num_reindexed"] > 0:
-                        print(
-                            f"  Average time per snippet: {stats['avg_time_per_snippet'] * 1000:.4f} ms"
+                        logger.info(
+                            "  Average time per snippet: %.4f ms",
+                            stats["avg_time_per_snippet"] * 1000,
                         )
         elif args.command == "find":
             if not 0.0 <= args.threshold < 0.99:
-                print("Error: --threshold must be between 0.0 and 0.98.")
+                logger.error("Error: --threshold must be between 0.0 and 0.98.")
                 sys.exit(1)
 
             query_string = args.query
@@ -292,7 +313,7 @@ def main():
                     with open(args.file, "r", encoding="utf-8") as f:
                         query_string = f.read()
                 except FileNotFoundError:
-                    print(f"Error: File not found at {args.file}")
+                    logger.error("Error: File not found at %s", args.file)
                     sys.exit(1)
 
             num_candidates, matches = find_matches(
@@ -304,7 +325,7 @@ def main():
             )
 
             if args.json:
-                print(
+                logger.info(
                     json.dumps(
                         {
                             "lsh_candidates": num_candidates,
@@ -321,21 +342,24 @@ def main():
                     )
                 )
             else:
-                print(f"Found {num_candidates} candidates via LSH.")
+                logger.info("Found %s candidates via LSH.", num_candidates)
                 if matches:
-                    print("--- Top Matches ---")
+                    logger.info("--- Top Matches ---")
                     for snippet, score in matches:
-                        print(
-                            f"  - Checksum: {snippet.checksum}, Names: {snippet.name_list}, Score: {score:.2f}"
+                        logger.info(
+                            "  - Checksum: %s, Names: %s, Score: %.2f",
+                            snippet.checksum,
+                            snippet.name_list,
+                            score,
                         )
                 else:
-                    print("No matches found after ranking.")
+                    logger.info("No matches found after ranking.")
         elif args.command == "config":
             if args.config_command == "path":
-                print(CONFIG_PATH)
+                logger.info(CONFIG_PATH)
             elif args.config_command == "list":
                 for key, value in config.items():
-                    print(f"{key} = {value}")
+                    logger.info("%s = %s", key, value)
             elif args.config_command == "set":
                 # This is a simplified implementation. A real one would be more robust.
                 config[args.key] = args.value
@@ -344,33 +368,36 @@ def main():
                 with open(CONFIG_PATH, "w", encoding="utf-8") as f:
                     # A more robust implementation would use a TOML library to write
                     f.write(f"{args.key} = {args.value}\n")
-                print(f"Set {args.key} to {args.value}")
+                logger.info("Set %s to %s", args.key, args.value)
         elif args.command == "compare":
             comparison = compare_snippets(session, args.checksum1, args.checksum2)
 
             if not comparison:
-                print("Error: One or both snippets could not be found.")
+                logger.error("Error: One or both snippets could not be found.")
                 sys.exit(1)
 
             if args.json:
-                print(json.dumps(comparison, indent=2))
+                logger.info(json.dumps(comparison, indent=2))
             else:
                 s1 = comparison["snippet1"]
                 s2 = comparison["snippet2"]
                 comp = comparison["comparison"]
 
-                print("--- Snippet Comparison ---")
-                print(f"Snippet 1: {s1['names']} ({s1['checksum'][:12]}...)")
-                print(f"Snippet 2: {s2['names']} ({s2['checksum'][:12]}...)")
-                print("\n--- Similarity Metrics ---")
-                print(
-                    f"  Jaccard Similarity (Structure): {comp['jaccard_similarity']:.2f}"
+                logger.info("--- Snippet Comparison ---")
+                logger.info("Snippet 1: %s (%s...)", s1["names"], s1["checksum"][:12])
+                logger.info("Snippet 2: %s (%s...)", s2["names"], s2["checksum"][:12])
+                logger.info("\n--- Similarity Metrics ---")
+                logger.info(
+                    "  Jaccard Similarity (Structure): %.2f",
+                    comp["jaccard_similarity"],
                 )
-                print(
-                    f"  Levenshtein Score (Code):       {comp['levenshtein_score']:.2f}"
+                logger.info(
+                    "  Levenshtein Score (Code):       %.2f",
+                    comp["levenshtein_score"],
                 )
-                print(
-                    f"  Shared Normalized Tokens:       {comp['shared_normalized_tokens']}"
+                logger.info(
+                    "  Shared Normalized Tokens:       %s",
+                    comp["shared_normalized_tokens"],
                 )
 
 
