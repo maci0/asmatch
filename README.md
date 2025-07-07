@@ -44,6 +44,19 @@ The LSH step gives us a small list of candidates, but it's not perfectly accurat
 
 - **Ranking:** The candidates are then ranked by their similarity score, and the top results are presented to the user.
 
+### Lookup Flow
+
+When you run `asmatch find`, the tool processes your query in several stages:
+
+1. **Load metadata** – The SQLite database and the cached LSH index are loaded. If the index is missing or stale it is rebuilt from the stored MinHash fingerprints.
+2. **Normalize query** – The query assembly is lexed and normalized unless `--no-normalization` is specified.
+3. **MinHash lookup** – The query's MinHash is hashed into the LSH buckets to retrieve candidate checksums.
+4. **Retrieve candidates** – Snippets matching those checksums are loaded from the database.
+5. **Score** – Each candidate is compared to the original query with RapidFuzz and assigned a similarity score.
+6. **Display results** – Candidates are sorted by score and the top results are shown or output as JSON.
+
+This pipeline lets `asmatch` search large datasets in milliseconds while ranking results accurately.
+
 ## Project Structure
 
 ```
