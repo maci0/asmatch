@@ -1,3 +1,5 @@
+"""Unit tests for the asmatch core module."""
+
 import unittest
 
 from sqlmodel import Session, SQLModel, create_engine, select
@@ -16,6 +18,7 @@ DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(DATABASE_URL)
 
 class TestAsmatch(unittest.TestCase):
+    """Tests for core snippet operations."""
 
     def setUp(self):
         """Set up a clean database for each test."""
@@ -107,7 +110,7 @@ class TestAsmatch(unittest.TestCase):
             test al, al
             jnz copy_loop
         """
-        num_candidates, matches = find_matches(self.session, query, top_n=1)
+        _num_candidates, matches = find_matches(self.session, query, top_n=1)
 
         self.assertEqual(len(matches), 1)
         # The key of the match should be the checksum
