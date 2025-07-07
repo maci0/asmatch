@@ -132,4 +132,4 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 - `asmatch config path` shows the location of the config file.
 - `asmatch config list` displays the current settings.
 - `asmatch config set <key> <value>` sets a new default value.
-- The tool reads default values for `lsh_threshold` and `top_n` from `~/.config/asmatch/config.toml`.
+- The tool reads default values for `lsh_threshold` and `top_n` from `~/.config/asmatch/config.toml`. This location can be changed with the `ASMATCH_CONFIG_DIR` environment variable.

@@ -6,7 +6,8 @@ import tempfile
 import tomli
 import tomli_w
 
-CONFIG_DIR = os.path.expanduser("~/.config/asmatch")
+DEFAULT_CONFIG_DIR = os.path.expanduser("~/.config/asmatch")
+CONFIG_DIR = os.path.expanduser(os.environ.get("ASMATCH_CONFIG_DIR", DEFAULT_CONFIG_DIR))
 CONFIG_PATH = os.path.join(CONFIG_DIR, "config.toml")
 
 DEFAULTS = {
