@@ -328,9 +328,9 @@ def cmd_clean(args: argparse.Namespace, session: Session, _config: dict) -> None
         logger.info(json.dumps(stats, indent=2))
     else:
         logger.info("--- Database and Cache Cleaned ---")
-        logger.info("  Cache files removed: %s", stats["num_cleaned"])
         if stats.get("vacuum_success"):
             logger.info("  Database vacuumed successfully.")
+        logger.info("  Cache invalidated.")
         logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
 
 
