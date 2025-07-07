@@ -17,6 +17,7 @@ from asmatch.models import Snippet
 DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(DATABASE_URL)
 
+
 class TestAsmatch(unittest.TestCase):
     """Tests for core snippet operations."""
 
@@ -116,5 +117,6 @@ class TestAsmatch(unittest.TestCase):
         # The key of the match should be the checksum
         self.assertEqual(matches[0][0].checksum, snippet1_checksum)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,3 @@
-
 """Database models used by asmatch."""
 
 import json

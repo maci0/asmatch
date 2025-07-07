@@ -1,4 +1,5 @@
 """Core functions for tokenizing and comparing assembly snippets."""
+
 import hashlib
 import json
 import pickle
@@ -23,19 +24,21 @@ lexer = NasmLexer()
 
 # --- Core Processing Functions ---
 
+
 def get_normalized_string(code_snippet: str) -> str:
     """Normalize an assembly snippet and return a canonical string."""
     tokens = lexer.get_tokens(code_snippet)
     # Join tokens, but only if they are not comments or pure whitespace
     return " ".join(
-        value for ttype, value in tokens
-        if ttype not in Comment and ttype != Text
+        value for ttype, value in tokens if ttype not in Comment and ttype != Text
     ).strip()
+
 
 def get_checksum(code_snippet: str) -> str:
     """Calculate the SHA256 checksum of a normalized code snippet."""
     normalized_string = get_normalized_string(code_snippet)
-    return hashlib.sha256(normalized_string.encode('utf-8')).hexdigest()
+    return hashlib.sha256(normalized_string.encode("utf-8")).hexdigest()
+
 
 def get_tokens(code_snippet: str, normalize: bool = True):
     """Return a list of tokens from a code snippet."""
@@ -58,6 +61,7 @@ def get_tokens(code_snippet: str, normalize: bool = True):
 
     return output_tokens
 
+
 def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
     """Return a MinHash object representing the given code snippet."""
     tokens = get_tokens(code_snippet, normalize)
@@ -65,10 +69,12 @@ def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
     if not tokens:
         return m
     for token in set(tokens):
-        m.update(token.encode('utf8'))
+        m.update(token.encode("utf8"))
     return m
 
+
 # --- Application Logic Functions ---
+
 
 def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
     """Add a new snippet or alias to the database."""
@@ -77,7 +83,9 @@ def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
     existing_snippet_by_name = Snippet.get_by_name(session, name)
     if existing_snippet_by_name:
         if not quiet:
-            print(f"Error: Name '{name}' is already associated with a different snippet.")
+            print(
+                f"Error: Name '{name}' is already associated with a different snippet."
+            )
         return None
 
     existing_snippet = Snippet.get_by_checksum(session, checksum)
@@ -109,6 +117,7 @@ def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
     invalidate_lsh_cache()
     return new_snippet
 
+
 def find_matches(
     session: Session,
     query_string: str,
@@ -127,7 +136,7 @@ def find_matches(
             save_lsh_cache(session, lsh, threshold)
 
     if lsh is None:
-        return 0, [] # Error handled in build_lsh_index
+        return 0, []  # Error handled in build_lsh_index
 
     query_minhash = code_to_minhash(query_string, normalize)
     candidate_keys = lsh.query(query_minhash)
@@ -135,16 +144,17 @@ def find_matches(
     if not candidate_keys:
         return 0, []
 
-    candidate_snippets = [Snippet.get_by_checksum(session, key) for key in candidate_keys]
+    candidate_snippets = [
+        Snippet.get_by_checksum(session, key) for key in candidate_keys
+    ]
     # Create a dictionary mapping checksum to the full snippet object
     candidate_map = {s.checksum: s for s in candidate_snippets if s}
-    candidate_choices = {checksum: snippet.code for checksum, snippet in candidate_map.items()}
+    candidate_choices = {
+        checksum: snippet.code for checksum, snippet in candidate_map.items()
+    }
 
     top_matches_tuples = process.extract(
-        query_string,
-        candidate_choices,
-        scorer=fuzz.ratio,
-        limit=top_n
+        query_string, candidate_choices, scorer=fuzz.ratio, limit=top_n
     )
 
     # Reconstruct the match list with the full snippet object
@@ -153,6 +163,7 @@ def find_matches(
     ]
 
     return len(candidate_keys), top_matches
+
 
 def delete_snippet(session: Session, name: str, quiet: bool = False):
     """Delete a name from a snippet or remove the snippet entirely."""
@@ -178,6 +189,7 @@ def delete_snippet(session: Session, name: str, quiet: bool = False):
 
     invalidate_lsh_cache()
     return True
+
 
 def update_snippet(_session: Session, _name: str, _new_code: str):
     """Deprecated no-op function kept for backward compatibility."""
@@ -212,9 +224,11 @@ def reindex_database(session: Session):
         "avg_time_per_snippet": time_elapsed / num_snippets,
     }
 
+
 def get_snippet_by_checksum(session: Session, checksum: str):
     """Return a snippet by its checksum."""
     return Snippet.get_by_checksum(session, checksum)
+
 
 def compare_snippets(session: Session, checksum1: str, checksum2: str) -> dict:
     """Compare two snippets and return similarity metrics."""
@@ -249,8 +263,9 @@ def compare_snippets(session: Session, checksum1: str, checksum2: str) -> dict:
             "jaccard_similarity": jaccard_similarity,
             "levenshtein_score": levenshtein_score,
             "shared_normalized_tokens": shared_tokens,
-        }
+        },
     }
+
 
 def get_average_similarity(session: Session, sample_size: int = 100) -> float:
     """Estimate average Jaccard similarity from a random sample."""
@@ -265,13 +280,14 @@ def get_average_similarity(session: Session, sample_size: int = 100) -> float:
     num_comparisons = 0
 
     for i, snippet_i in enumerate(snippets):
-        for snippet_j in snippets[i + 1:]:
+        for snippet_j in snippets[i + 1 :]:
             m1 = snippet_i.get_minhash_obj()
             m2 = snippet_j.get_minhash_obj()
             total_similarity += m1.jaccard(m2)
             num_comparisons += 1
 
     return total_similarity / num_comparisons if num_comparisons > 0 else 1.0
+
 
 def get_db_stats(session: Session):
     """Return a dictionary of database statistics."""
@@ -296,6 +312,7 @@ def get_db_stats(session: Session):
         "vocabulary_size": len(all_tokens),
         "avg_similarity": get_average_similarity(session),
     }
+
 
 def list_snippets(session: Session, start: int = 0, end: int = 0):
     """List snippets, optionally within a given range."""

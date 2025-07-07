@@ -1,4 +1,3 @@
-
 """Configuration loader for asmatch."""
 
 import os
@@ -13,6 +12,7 @@ DEFAULTS = {
     "num_permutations": 128,
     "top_n": 5,
 }
+
 
 def load_config() -> dict:
     """Load the user's configuration file if it exists."""

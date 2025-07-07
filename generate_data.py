@@ -1,7 +1,7 @@
 """Utility script to generate random assembly files for testing."""
 
-import random
 import os
+import random
 import textwrap
 
 # --- Configuration ---
@@ -17,6 +17,7 @@ CONDITIONAL_JUMPS = ["je", "jne", "jg", "jl", "jge", "jle"]
 
 # --- Code Block Generators ---
 
+
 def generate_arithmetic_block(num_instructions: int) -> list[str]:
     """Generates a block of random arithmetic operations."""
     lines = ["; --- Arithmetic Block ---"]
@@ -28,6 +29,7 @@ def generate_arithmetic_block(num_instructions: int) -> list[str]:
         lines.append(f"    {op} {reg2}, {val}")
     return lines
 
+
 def generate_stack_block(num_instructions: int) -> list[str]:
     """Generates a block of random stack operations."""
     lines = ["; --- Stack Manipulation ---"]
@@ -36,6 +38,7 @@ def generate_stack_block(num_instructions: int) -> list[str]:
         reg = random.choice(REGISTERS)
         lines.append(f"    {op} {reg}")
     return lines
+
 
 def generate_data_block(num_instructions: int) -> list[str]:
     """Generates a block of random data movement operations."""
@@ -47,6 +50,7 @@ def generate_data_block(num_instructions: int) -> list[str]:
         lines.append(f"    mov {reg2}, {val}")
     return lines
 
+
 def generate_conditional_block(label_id: int) -> list[str]:
     """Generates a conditional jump block."""
     lines = ["; --- Conditional Block ---"]
@@ -57,6 +61,7 @@ def generate_conditional_block(label_id: int) -> list[str]:
     lines.extend(generate_arithmetic_block(random.randint(1, 2)))
     lines.append(f".label_{label_id}:")
     return lines
+
 
 # --- Main Generation Logic ---
 def generate_files():
@@ -77,39 +82,48 @@ def generate_files():
         num_blocks = random.randint(2, 5)
 
         for j in range(num_blocks):
-            block_type = random.choice([
-                generate_arithmetic_block,
-                generate_stack_block,
-                generate_data_block,
-                generate_conditional_block,
-            ])
+            block_type = random.choice(
+                [
+                    generate_arithmetic_block,
+                    generate_stack_block,
+                    generate_data_block,
+                    generate_conditional_block,
+                ]
+            )
             if block_type is generate_conditional_block:
                 body.extend(block_type(f"{i}_{j}"))
             else:
                 body.extend(block_type(random.randint(1, 3)))
-            body.append("") # Add a blank line for spacing
+            body.append("")  # Add a blank line for spacing
 
         # --- Assemble the final file content ---
-        content = [
-            f"; Function: {name}",
-            "; Description: A highly randomized, auto-generated function.",
-            "section .text",
-            f"global {name}",
-            f"{name}:",
-            "    push    ebp",
-            "    mov     ebp, esp",
-        ] + body + [
-            "    mov     esp, ebp",
-            "    pop     ebp",
-            "    ret",
-        ]
+        content = (
+            [
+                f"; Function: {name}",
+                "; Description: A highly randomized, auto-generated function.",
+                "section .text",
+                f"global {name}",
+                f"{name}:",
+                "    push    ebp",
+                "    mov     ebp, esp",
+            ]
+            + body
+            + [
+                "    mov     esp, ebp",
+                "    pop     ebp",
+                "    ret",
+            ]
+        )
 
         # Write the file
         file_path = os.path.join(DATA_DIR, f"{name}.asm")
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write("\n".join(textwrap.indent(line, '    ') for line in content))
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(textwrap.indent(line, "    ") for line in content))
 
-    print(f"Successfully generated {NUM_FILES} new, more random assembly files in '{DATA_DIR}/'")
+    print(
+        f"Successfully generated {NUM_FILES} new, more random assembly files in '{DATA_DIR}/'"
+    )
+
 
 if __name__ == "__main__":
     generate_files()

@@ -1,4 +1,3 @@
-
 """Utilities for caching and loading the MinHash LSH index."""
 
 import os
@@ -12,9 +11,11 @@ from .models import Snippet
 CACHE_DIR = os.path.expanduser("~/.cache/asmatch")
 DB_CHECKSUM_PATH = os.path.join(CACHE_DIR, "db_checksum.txt")
 
+
 def get_lsh_cache_path(threshold: float) -> str:
     """Return the path to the LSH cache file for a given threshold."""
     return os.path.join(CACHE_DIR, f"lsh_{threshold:.2f}.pkl")
+
 
 def get_db_checksum(session: Session) -> str:
     """Return a checksum representing the current database state."""
@@ -28,6 +29,7 @@ def get_db_checksum(session: Session) -> str:
         select(Snippet).order_by(Snippet.checksum.desc())  # pylint: disable=no-member
     ).first()
     return f"{count}-{last_snippet.checksum}"
+
 
 def build_lsh_index(session: Session, threshold: float, num_perm: int) -> MinHashLSH:
     """Build the LSH index from snippets in the database."""
@@ -46,6 +48,7 @@ def build_lsh_index(session: Session, threshold: float, num_perm: int) -> MinHas
         lsh.insert(snippet.checksum, snippet.get_minhash_obj())
     return lsh
 
+
 def save_lsh_cache(session: Session, lsh, threshold: float):
     """Save the LSH index and the current DB checksum to the cache."""
     if not os.path.exists(CACHE_DIR):
@@ -57,6 +60,7 @@ def save_lsh_cache(session: Session, lsh, threshold: float):
 
     with open(DB_CHECKSUM_PATH, "w", encoding="utf-8") as f:
         f.write(get_db_checksum(session))
+
 
 def load_lsh_cache(session: Session, threshold: float):
     """Load the LSH index from cache if it is still valid."""
@@ -70,10 +74,11 @@ def load_lsh_cache(session: Session, threshold: float):
     current_checksum = get_db_checksum(session)
 
     if cached_checksum != current_checksum:
-        return None # Cache is stale
+        return None  # Cache is stale
 
     with open(lsh_cache_path, "rb") as f:
         return pickle.load(f)
+
 
 def invalidate_lsh_cache():
     """Delete all cached LSH files."""
