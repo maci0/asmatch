@@ -133,3 +133,16 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 - `asmatch config list` displays the current settings.
 - `asmatch config set <key> <value>` sets a new default value.
 - The tool reads default values for `lsh_threshold` and `top_n` from `~/.config/asmatch/config.toml`. This location can be changed with the `ASMATCH_CONFIG_DIR` environment variable.
+
+---
+
+### Title: Perform a quick end-to-end lookup
+
+**As a** new user,
+**I want to** add a snippet and immediately search for it,
+**so that** I can verify the tool and cache are working.
+
+**Acceptance Criteria:**
+- `asmatch add my_snippet "MOV EAX, EBX"` stores the snippet and updates the LSH index.
+- `asmatch find --query "MOV EAX, EBX"` returns that snippet among the results.
+- Each result includes a similarity score.
