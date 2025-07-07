@@ -18,6 +18,10 @@ This approach provides several advantages:
 - **Deduplication:** It is impossible to have two entries with the exact same code, even if they have different names.
 - **Stable IDs:** The identifier for a snippet remains the same, even if the database is rebuilt.
 
+### LSH Caching
+
+To make searches nearly instantaneous, `asmatch` caches the LSH index to a file in `~/.cache/asmatch/`. The cache is automatically invalidated and rebuilt whenever the database is modified.
+
 ## How It Works
 
 The search process is a two-step pipeline designed for both speed and accuracy:
@@ -48,6 +52,7 @@ asmatch/
 │   └── asmatch/
 │       ├── __init__.py
 │       ├── cli.py
+│       ├── config.py
 │       ├── core.py
 │       ├── database.py
 │       └── models.py
@@ -70,29 +75,38 @@ It is recommended to install the package in editable mode. This allows you to ru
 pip install -e .
 ```
 
-### 2. Usage
+### 2. Configuration
 
-`asmatch` provides a `kubectl`-style verb-noun interface.
+You can create a configuration file at `~/.config/asmatch/config.toml` to set default values.
+
+**Example `config.toml`:**
+```toml
+lsh_threshold = 0.8
+top_n = 5
+```
+
+You can manage this file with the `asmatch config` command.
+
+### 3. Usage
+
+`asmatch` provides a streamlined, action-oriented interface.
 
 **Examples:**
 ```bash
-# Create a new snippet
-asmatch create snippet my_snippet "MOV EAX, 1"
+# Add a new snippet or an alias
+asmatch add my_memcpy "MOV EAX, EBX; ..."
 
-# Get a list of all snippets
-asmatch get snippets
+# Bulk-import from a directory
+asmatch import /path/to/my/snippets/
 
-# Get database statistics
-asmatch db stats
+# List all snippets
+asmatch list
 
-# Re-index the database
-asmatch db reindex
+# Show details for a specific snippet
+asmatch show <checksum>
 
-# Find similar snippets with a higher threshold
-asmatch find --query "MOV EAX" --threshold 0.8
-
-# Find snippets without normalization
-asmatch find --file my_func.asm --no-normalization
+# Find similar snippets
+asmatch find --query "MOV EAX"
 ```
 
 For a detailed breakdown of all commands and features, see the [User Stories](./docs/user_stories.md) or run:
@@ -100,7 +114,7 @@ For a detailed breakdown of all commands and features, see the [User Stories](./
 asmatch --help
 ```
 
-### 3. Running Tests
+### 4. Running Tests
 
 To ensure everything is working correctly, you can run the test suite:
 ```bash

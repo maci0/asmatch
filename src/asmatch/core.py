@@ -1,13 +1,16 @@
-
 # asmatch/core.py
+import hashlib
+import json
 import pickle
 import time
-import hashlib
+
+from datasketch import MinHash
 from pygments.lexers.asm import NasmLexer
-from pygments.token import Name, Number, Punctuation, Comment, Text
-from datasketch import MinHash, MinHashLSH
-from rapidfuzz import process, fuzz
+from pygments.token import Comment, Name, Number, Punctuation, Text
+from rapidfuzz import fuzz, process
 from sqlmodel import Session, select
+
+from .cache import build_lsh_index, invalidate_lsh_cache, load_lsh_cache, save_lsh_cache
 from .models import Snippet
 
 # --- Constants and Configuration ---
@@ -69,55 +72,59 @@ def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
         m.update(token.encode('utf8'))
     return m
 
-# --- LSH Index Management ---
-
-def get_lsh_index(session: Session, threshold: float = LSH_THRESHOLD) -> MinHashLSH:
-    """Builds or rebuilds the LSH index from snippets in the database."""
-    try:
-        lsh = MinHashLSH(threshold=threshold, num_perm=NUM_PERMUTATIONS)
-    except ValueError as e:
-        print(f"Error: Invalid LSH parameters. The threshold ({threshold}) may be too high for the number of permutations ({NUM_PERMUTATIONS}).")
-        print(f"  -> Original error: {e}")
-        return None
-        
-    snippets = Snippet.get_all(session)
-    for snippet in snippets:
-        lsh.insert(snippet.checksum, snippet.get_minhash_obj())
-    return lsh
-
 # --- Application Logic Functions ---
 
 def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
-    """Adds a new snippet to the database."""
+    """
+    Adds a new snippet to the database.
+    If the code already exists, it adds the new name as an alias.
+    """
     checksum = get_checksum(code)
     
-    existing_by_checksum = Snippet.get_by_checksum(session, checksum)
-    if existing_by_checksum:
+    existing_snippet_by_name = Snippet.get_by_name(session, name)
+    if existing_snippet_by_name:
         if not quiet:
-            print(f"Error: Snippet with this exact code already exists under the name '{existing_by_checksum.name}'.")
+            print(f"Error: Name '{name}' is already associated with a different snippet.")
         return None
 
-    existing_by_name = Snippet.get_by_name(session, name)
-    if existing_by_name:
-        if not quiet:
-            print(f"Error: Snippet with name '{name}' already exists.")
-        return None
+    existing_snippet = Snippet.get_by_checksum(session, checksum)
     
+    if existing_snippet:
+        # Code exists, add new name as an alias
+        name_list = existing_snippet.name_list
+        name_list.append(name)
+        existing_snippet.names = json.dumps(name_list)
+        session.add(existing_snippet)
+        session.commit()
+        session.refresh(existing_snippet)
+        invalidate_lsh_cache()
+        return existing_snippet
+
+    # Snippet with this code does not exist, create a new one
     minhash_obj = code_to_minhash(code)
     minhash_bytes = pickle.dumps(minhash_obj)
     
-    snippet = Snippet(checksum=checksum, name=name, code=code, minhash=minhash_bytes)
-    session.add(snippet)
+    new_snippet = Snippet(checksum=checksum, names=json.dumps([name]), code=code, minhash=minhash_bytes)
+    session.add(new_snippet)
     session.commit()
-    session.refresh(snippet)
-    return snippet
+    session.refresh(new_snippet)
+    invalidate_lsh_cache()
+    return new_snippet
 
 def find_matches(session: Session, query_string: str, top_n: int = 3, threshold: float = None, normalize: bool = True):
     """Finds and prints top matches for a query."""
     if threshold is None:
         threshold = LSH_THRESHOLD
         
-    lsh = get_lsh_index(session, threshold)
+    lsh = load_lsh_cache(session, threshold)
+    if not lsh:
+        lsh = build_lsh_index(session, threshold, NUM_PERMUTATIONS)
+        if lsh:
+            save_lsh_cache(session, lsh, threshold)
+    
+    if lsh is None:
+        return 0, [] # Error handled in build_lsh_index
+
     query_minhash = code_to_minhash(query_string, normalize)
     candidate_keys = lsh.query(query_minhash)
     
@@ -143,28 +150,37 @@ def find_matches(session: Session, query_string: str, top_n: int = 3, threshold:
     
     return len(candidate_keys), top_matches
 
-def delete_snippet(session: Session, name: str):
-    """Deletes a snippet from the database by name."""
+def delete_snippet(session: Session, name: str, quiet: bool = False):
+    """
+    Deletes a name from a snippet. If it's the last name, deletes the snippet.
+    """
     snippet = Snippet.get_by_name(session, name)
     if not snippet:
-        print(f"Error: Snippet with name '{name}' not found.")
+        if not quiet:
+            print(f"Error: Snippet with name '{name}' not found.")
         return False
     
-    session.delete(snippet)
-    session.commit()
+    name_list = snippet.name_list
+    if len(name_list) > 1:
+        name_list.remove(name)
+        snippet.names = json.dumps(name_list)
+        session.add(snippet)
+        session.commit()
+        if not quiet:
+            print(f"Removed name '{name}' from snippet. {len(name_list)} names remain.")
+    else:
+        session.delete(snippet)
+        session.commit()
+        if not quiet:
+            print(f"Removed last name '{name}'. Deleting snippet.")
+            
+    invalidate_lsh_cache()
     return True
 
 def update_snippet(session: Session, name: str, new_code: str):
-    """Updates the code for an existing snippet."""
-    snippet = Snippet.get_by_name(session, name)
-    if not snippet:
-        print(f"Error: Snippet with name '{name}' not found.")
-        return None
-    
-    session.delete(snippet)
-    session.commit()
-    
-    return add_snippet(session, name, new_code)
+    """This function is now deprecated in favor of the alias system."""
+    print("Warning: 'update snippet' is deprecated. Use create and delete for alias management.")
+    return None
 
 def reindex_database(session: Session):
     """Recalculates the MinHash for every snippet in the database."""
@@ -181,6 +197,7 @@ def reindex_database(session: Session):
         session.add(snippet)
     
     session.commit()
+    invalidate_lsh_cache()
     
     end_time = time.time()
     time_elapsed = end_time - start_time
