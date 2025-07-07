@@ -120,6 +120,12 @@ asmatch find --query "MOV EAX"
 asmatch compare <checksum1> <checksum2>
 ```
 
+Global options:
+```
+--quiet   Suppress informational output
+--verbose Increase output verbosity
+```
+
 For a detailed breakdown of all commands and features, see the [User Stories](./docs/user_stories.md) or run:
 ```bash
 asmatch --help
