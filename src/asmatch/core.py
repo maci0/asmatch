@@ -40,7 +40,7 @@ def get_checksum(code_snippet: str) -> str:
     return hashlib.sha256(normalized_string.encode("utf-8")).hexdigest()
 
 
-def get_tokens(code_snippet: str, normalize: bool = True):
+def get_tokens(code_snippet: str, normalize: bool = True) -> list[str]:
     """Return a list of tokens from a code snippet."""
     tokens = lexer.get_tokens(code_snippet)
     output_tokens = []
@@ -230,7 +230,7 @@ def get_snippet_by_checksum(session: Session, checksum: str):
     return Snippet.get_by_checksum(session, checksum)
 
 
-def compare_snippets(session: Session, checksum1: str, checksum2: str) -> dict:
+def compare_snippets(session: Session, checksum1: str, checksum2: str) -> dict | None:
     """Compare two snippets and return similarity metrics."""
     snippet1 = get_snippet_by_checksum(session, checksum1)
     snippet2 = get_snippet_by_checksum(session, checksum2)
