@@ -13,7 +13,7 @@ from sqlmodel import Session
 from .config import CONFIG_PATH, load_config, update_config
 from .core import (
     add_snippet,
-    clean_cache,
+    clean_database_and_cache,
     compare_snippets,
     delete_snippet,
     export_snippets,
@@ -24,19 +24,23 @@ from .core import (
     reindex_database,
 )
 
-def cmd_clean(args: argparse.Namespace, _session: Session, _config: dict) -> None:
+def cmd_clean(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``clean`` command."""
-    stats = clean_cache()
+    stats = clean_database_and_cache(session)
     if args.json:
         logger.info(json.dumps(stats, indent=2))
     else:
-        logger.info("--- Cache Cleaned ---")
-        logger.info("  Files removed: %s", stats["num_cleaned"])
+        logger.info("--- Database and Cache Cleaned ---")
+        logger.info("  Cache files removed: %s", stats["num_cleaned"])
+        if stats.get("vacuum_success"):
+            logger.info("  Database vacuumed successfully.")
         logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
 
 def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
     """Add the ``clean`` subparser to ``subparsers``."""
-    parser_clean = subparsers.add_parser("clean", help="Clean the LSH cache.")
+    parser_clean = subparsers.add_parser(
+        "clean", help="Clean the LSH cache and vacuum the database."
+    )
     parser_clean.add_argument(
         "--json", action="store_true", help="Output results in JSON format."
     )
