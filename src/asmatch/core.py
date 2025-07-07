@@ -349,6 +349,7 @@ def export_snippets(session: Session, export_dir: str) -> dict:
         ),
     }
 
+
 def clean_database_and_cache(session: Session) -> dict:
     """Clean the LSH cache and vacuum the database."""
     start_time = time.time()

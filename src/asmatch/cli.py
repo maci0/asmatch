@@ -11,10 +11,9 @@ import time
 from sqlmodel import Session
 
 from .config import CONFIG_PATH, load_config, update_config
-from .database import create_db_and_tables, engine
-
 from .core import (
     add_snippet,
+    clean_database_and_cache,
     compare_snippets,
     delete_snippet,
     export_snippets,
@@ -23,8 +22,8 @@ from .core import (
     get_snippet_by_checksum,
     list_snippets,
     reindex_database,
-    clean_database_and_cache,
 )
+from .database import create_db_and_tables, engine
 
 logger = logging.getLogger(__name__)
 
@@ -334,6 +333,7 @@ def cmd_clean(args: argparse.Namespace, session: Session, _config: dict) -> None
             logger.info("  Database vacuumed successfully.")
         logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
 
+
 def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
     """Add the ``clean`` subparser to ``subparsers``."""
     parser_clean = subparsers.add_parser(
@@ -343,6 +343,7 @@ def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
         "--json", action="store_true", help="Output results in JSON format."
     )
     parser_clean.set_defaults(func=cmd_clean)
+
 
 def add_config_subparser(subparsers: argparse._SubParsersAction) -> None:
     """Add the ``config`` subparser to ``subparsers``."""
@@ -536,7 +537,6 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     add_config_subparser(subparsers)
     add_compare_subparser(subparsers)
     add_clean_subparser(subparsers)
-
 
     return parser
 
