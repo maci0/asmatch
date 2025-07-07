@@ -43,31 +43,22 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 - `asmatch import <directory>` imports all `.asm` and `.txt` files.
 - The filename (without extension) is used as the snippet name.
 - The user is prompted for confirmation before the import begins.
+- The user can bypass the confirmation prompt with the `--force` flag.
 
 ---
 
-### Title: List all code snippets
+### Title: Export all snippets to a directory
 
 **As a** user,
-**I want to** use the `list` (or `ls`) command,
-**so that I can** see a list of all the snippets currently in the database.
+**I want to** use the `export` command to save all snippets to a directory,
+**so that I can** easily back up or share my database.
 
 **Acceptance Criteria:**
-- `asmatch list` returns a list of all snippets with their checksum and names.
-- The user can specify a range with `--range`.
-- The output can be formatted as JSON with `--json`.
-
----
-
-### Title: Show details for a specific code snippet
-
-**As a** developer,
-**I want to** use the `show` command,
-**so that I can** see the detailed information for a single snippet, including its full code.
-
-**Acceptance Criteria:**
-- `asmatch show <checksum>` shows the checksum, names, and code for a specific snippet.
-- The output can be formatted as JSON with `--json`.
+- `asmatch export <directory>` exports all snippets to the specified directory.
+- Each snippet is saved as a separate `.asm` file.
+- The filename is the primary name of the snippet.
+- The user is prompted for confirmation before the export begins.
+- The user can bypass the confirmation prompt with the `--force` flag.
 
 ---
 
@@ -80,7 +71,20 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 **Acceptance Criteria:**
 - `asmatch compare <checksum1> <checksum2>` displays a side-by-side comparison.
 - The comparison includes Jaccard similarity, Levenshtein score, and shared token count.
+- The output is color-coded for readability.
 - The output can be formatted as JSON with `--json`.
+
+---
+
+### Title: Clean the database and cache
+
+**As a** user,
+**I want to** use the `clean` command to remove dangling cache files and optimize the database,
+**so that I can** ensure the tool is running efficiently.
+
+**Acceptance Criteria:**
+- `asmatch clean` removes all LSH cache files from the current directory.
+- `asmatch clean` vacuums the database to reclaim unused space.
 
 ---
 
