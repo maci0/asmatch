@@ -11,9 +11,10 @@ import time
 from sqlmodel import Session
 
 from .config import CONFIG_PATH, load_config, update_config
+from .database import create_db_and_tables, engine
+
 from .core import (
     add_snippet,
-    clean_database_and_cache,
     compare_snippets,
     delete_snippet,
     export_snippets,
@@ -22,32 +23,11 @@ from .core import (
     get_snippet_by_checksum,
     list_snippets,
     reindex_database,
+    clean_database_and_cache,
 )
 
-def cmd_clean(args: argparse.Namespace, session: Session, _config: dict) -> None:
-    """Handle the ``clean`` command."""
-    stats = clean_database_and_cache(session)
-    if args.json:
-        logger.info(json.dumps(stats, indent=2))
-    else:
-        logger.info("--- Database and Cache Cleaned ---")
-        logger.info("  Cache files removed: %s", stats["num_cleaned"])
-        if stats.get("vacuum_success"):
-            logger.info("  Database vacuumed successfully.")
-        logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
-
-def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
-    """Add the ``clean`` subparser to ``subparsers``."""
-    parser_clean = subparsers.add_parser(
-        "clean", help="Clean the LSH cache and vacuum the database."
-    )
-    parser_clean.add_argument(
-        "--json", action="store_true", help="Output results in JSON format."
-    )
-    parser_clean.set_defaults(func=cmd_clean)
-from .database import create_db_and_tables, engine
-
 logger = logging.getLogger(__name__)
+
 
 def confirm_action(prompt: str) -> bool:
     """Asks the user for confirmation."""
@@ -79,6 +59,7 @@ def cmd_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
             snippet.checksum,
             snippet.name_list,
         )
+
 
 def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``export`` command."""
@@ -112,8 +93,8 @@ def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> Non
     start_time = time.time()
     snippets_added = 0
 
-    file_paths = glob.glob(os.path.join(args.directory, '**', '*.asm'), recursive=True)
-    file_paths += glob.glob(os.path.join(args.directory, '**', '*.txt'), recursive=True)
+    file_paths = glob.glob(os.path.join(args.directory, "**", "*.asm"), recursive=True)
+    file_paths += glob.glob(os.path.join(args.directory, "**", "*.txt"), recursive=True)
 
     for file_path in file_paths:
         name = os.path.splitext(os.path.basename(file_path))[0]
@@ -150,7 +131,7 @@ def cmd_list(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``list`` command."""
     start, end = 0, 0
     if args.range:
-        parts = args.range.split('-')
+        parts = args.range.split("-")
         if len(parts) != 2 or not all(part.isdigit() for part in parts):
             logger.error("Error: Invalid range format. Use start-end (e.g., 10-30).")
             return
@@ -320,18 +301,48 @@ def cmd_compare(args: argparse.Namespace, session: Session, _config: dict) -> No
         comp = comparison["comparison"]
 
         logger.info("--- Snippet Comparison ---")
-        logger.info("\033[1mSnippet 1:\033[0m %s (%s...)", s1["names"], s1["checksum"][:12])
-        logger.info("\033[1mSnippet 2:\033[0m %s (%s...)", s2["names"], s2["checksum"][:12])
+        logger.info(
+            "\033[1mSnippet 1:\033[0m %s (%s...)", s1["names"], s1["checksum"][:12]
+        )
+        logger.info(
+            "\033[1mSnippet 2:\033[0m %s (%s...)", s2["names"], s2["checksum"][:12]
+        )
         logger.info("\n--- Similarity Metrics ---")
         logger.info(
-            "  \033[92mJaccard Similarity (Structure): %.2f\033[0m", comp["jaccard_similarity"]
+            "  \033[92mJaccard Similarity (Structure): %.2f\033[0m",
+            comp["jaccard_similarity"],
         )
-        logger.info("  \033[93mLevenshtein Score (Code):       %.2f\033[0m", comp["levenshtein_score"])
         logger.info(
-            "  \033[94mShared Normalized Tokens:       %s\033[0m", comp["shared_normalized_tokens"]
+            "  \033[93mLevenshtein Score (Code):       %.2f\033[0m",
+            comp["levenshtein_score"],
+        )
+        logger.info(
+            "  \033[94mShared Normalized Tokens:       %s\033[0m",
+            comp["shared_normalized_tokens"],
         )
 
 
+def cmd_clean(args: argparse.Namespace, session: Session, _config: dict) -> None:
+    """Handle the ``clean`` command."""
+    stats = clean_database_and_cache(session)
+    if args.json:
+        logger.info(json.dumps(stats, indent=2))
+    else:
+        logger.info("--- Database and Cache Cleaned ---")
+        logger.info("  Cache files removed: %s", stats["num_cleaned"])
+        if stats.get("vacuum_success"):
+            logger.info("  Database vacuumed successfully.")
+        logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
+
+def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``clean`` subparser to ``subparsers``."""
+    parser_clean = subparsers.add_parser(
+        "clean", help="Clean the LSH cache and vacuum the database."
+    )
+    parser_clean.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
+    parser_clean.set_defaults(func=cmd_clean)
 
 def add_config_subparser(subparsers: argparse._SubParsersAction) -> None:
     """Add the ``config`` subparser to ``subparsers``."""
@@ -377,14 +388,13 @@ def add_import_subparser(subparsers: argparse._SubParsersAction) -> None:
     )
     parser_import.set_defaults(func=cmd_import)
 
+
 def add_export_subparser(subparsers: argparse._SubParsersAction) -> None:
     """Add the ``export`` subparser to ``subparsers``."""
     parser_export = subparsers.add_parser(
         "export", help="Export all snippets to a directory."
     )
-    parser_export.add_argument(
-        "directory", help="The directory to export snippets to."
-    )
+    parser_export.add_argument("directory", help="The directory to export snippets to.")
     parser_export.add_argument(
         "--json", action="store_true", help="Output results in JSON format."
     )
@@ -526,6 +536,7 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     add_config_subparser(subparsers)
     add_compare_subparser(subparsers)
     add_clean_subparser(subparsers)
+
 
     return parser
 
