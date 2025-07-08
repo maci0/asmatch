@@ -298,31 +298,47 @@ def cmd_compare(args: argparse.Namespace, session: Session, _config: dict) -> No
 
     if args.json:
         logger.info(json.dumps(comparison, indent=2))
-    else:
-        s1 = comparison["snippet1"]
-        s2 = comparison["snippet2"]
-        comp = comparison["comparison"]
+        return
 
-        logger.info("--- Snippet Comparison ---")
-        logger.info(
-            "\033[1mSnippet 1:\033[0m %s (%s...)", s1["names"], s1["checksum"][:12]
+    s1 = comparison["snippet1"]
+    s2 = comparison["snippet2"]
+    comp = comparison["comparison"]
+
+    def format_output(label: str, value: str, color: str = "") -> str:
+        if args.no_color or not color:
+            return f"{label}{value}"
+        return f"\033[{color}m{label}{value}\033[0m"
+
+    logger.info("--- Snippet Comparison ---")
+    logger.info(
+        format_output("Snippet 1: ", f"{s1['names']} ({s1['checksum'][:12]}...)", "1")
+    )
+    logger.info(
+        format_output("Snippet 2: ", f"{s2['names']} ({s2['checksum'][:12]}...)", "1")
+    )
+
+    logger.info("\n--- Similarity Metrics ---")
+    logger.info(
+        format_output(
+            "  Jaccard Similarity (Structure): ",
+            f"{comp['jaccard_similarity']:.2f}",
+            "92",
         )
-        logger.info(
-            "\033[1mSnippet 2:\033[0m %s (%s...)", s2["names"], s2["checksum"][:12]
+    )
+    logger.info(
+        format_output(
+            "  Levenshtein Score (Code):       ",
+            f"{comp['levenshtein_score']:.2f}",
+            "93",
         )
-        logger.info("\n--- Similarity Metrics ---")
-        logger.info(
-            "  \033[92mJaccard Similarity (Structure): %.2f\033[0m",
-            comp["jaccard_similarity"],
+    )
+    logger.info(
+        format_output(
+            "  Shared Normalized Tokens:       ",
+            str(comp["shared_normalized_tokens"]),
+            "94",
         )
-        logger.info(
-            "  \033[93mLevenshtein Score (Code):       %.2f\033[0m",
-            comp["levenshtein_score"],
-        )
-        logger.info(
-            "  \033[94mShared Normalized Tokens:       %s\033[0m",
-            comp["shared_normalized_tokens"],
-        )
+    )
 
 
 def cmd_clean(args: argparse.Namespace, session: Session, _config: dict) -> None:
@@ -556,6 +572,9 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     )
     verbosity_group.add_argument(
         "-v", "--verbose", action="store_true", help="Increase output verbosity."
+    )
+    parser.add_argument(
+        "--no-color", action="store_true", help="Disable colored output."
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
