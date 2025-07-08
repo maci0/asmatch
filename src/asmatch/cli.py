@@ -27,6 +27,10 @@ from .core import (
 )
 from .database import create_db_and_tables, engine
 
+
+class CLIError(Exception):
+    """Custom exception for CLI-related errors."""
+
 logger = logging.getLogger(__name__)
 
 
@@ -222,8 +226,7 @@ def cmd_reindex(args: argparse.Namespace, session: Session, _config: dict) -> No
 def cmd_find(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``find`` command."""
     if not 0.0 <= args.threshold < 0.99:
-        logger.error("Error: --threshold must be between 0.0 and 0.98.")
-        sys.exit(1)
+        raise CLIError("--threshold must be between 0.0 and 0.98.")
 
     query_string = None
     if args.query:
@@ -232,8 +235,7 @@ def cmd_find(args: argparse.Namespace, session: Session, _config: dict) -> None:
         query_string = args.file.read()
 
     if not query_string:
-        logger.error("Error: No query provided. Use --query, --file, or stdin.")
-        sys.exit(1)
+        raise CLIError("No query provided. Use --query, --file, or stdin.")
 
     num_candidates, matches = find_matches(
         session, query_string, args.top_n, args.threshold, not args.no_normalization
@@ -293,8 +295,7 @@ def cmd_compare(args: argparse.Namespace, session: Session, _config: dict) -> No
     """Handle the ``compare`` command."""
     comparison = compare_snippets(session, args.checksum1, args.checksum2)
     if not comparison:
-        logger.error("Error: One or both snippets could not be found.")
-        sys.exit(1)
+        raise CLIError("One or both snippets could not be found.")
 
     if args.json:
         logger.info(json.dumps(comparison, indent=2))
@@ -605,9 +606,12 @@ def main() -> None:
     args = parser.parse_args()
     setup_logging(args)
     logger.debug("Running command: %s", args.command)
-
-    with Session(engine) as session:
-        args.func(args, session, config)
+    try:
+        with Session(engine) as session:
+            args.func(args, session, config)
+    except CLIError as e:
+        logger.error("Error: %s", e)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
