@@ -187,20 +187,19 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("Snippets re-indexed: 1", result.stdout)
 
-    def test_delete_name_with_confirmation(self):
-        """Removing a name after confirmation should update the database."""
-        # Add a second alias so the snippet isn't deleted entirely
+    def test_delete_by_checksum_with_confirmation(self):
+        """Removing a snippet by checksum after confirmation should update the database."""
         with Session(self.engine) as session:
-            add_snippet(session, "alias2", "MOV EAX, 1", quiet=True)
+            snippet = Snippet.get_by_name(session, "test_snippet")
+            self.assertIsNotNone(snippet)
+            checksum = snippet.checksum
 
-        rm_result = self.run_command("rm test_snippet", input_data="y\n")
+        rm_result = self.run_command(f"rm {checksum}", input_data="y\n")
         self.assertEqual(rm_result.returncode, 0)
 
         with Session(self.engine) as session:
-            snippet = Snippet.get_by_name(session, "test_snippet")
+            snippet = Snippet.get_by_checksum(session, checksum)
             self.assertIsNone(snippet)
-            remaining = Snippet.get_by_name(session, "alias2")
-            self.assertIsNotNone(remaining)
 
     def test_export_command(self):
         """Test the export command."""
@@ -216,6 +215,29 @@ class TestCLI(unittest.TestCase):
             with open(exported_file, "r", encoding="utf-8") as f:
                 content = f.read()
                 self.assertEqual(content, "MOV EAX, 1")
+
+    def test_name_add_and_remove(self):
+        """Test the name add and remove commands."""
+        with Session(self.engine) as session:
+            snippet = Snippet.get_by_name(session, "test_snippet")
+            self.assertIsNotNone(snippet)
+            checksum = snippet.checksum
+
+        # Add a new name
+        result = self.run_command(f"name add {checksum} new_name")
+        self.assertEqual(result.returncode, 0)
+
+        with Session(self.engine) as session:
+            snippet = Snippet.get_by_checksum(session, checksum)
+            self.assertIn("new_name", snippet.name_list)
+
+        # Remove the new name
+        result = self.run_command(f"name remove {checksum} new_name")
+        self.assertEqual(result.returncode, 0)
+
+        with Session(self.engine) as session:
+            snippet = Snippet.get_by_checksum(session, checksum)
+            self.assertNotIn("new_name", snippet.name_list)
 
 
 if __name__ == "__main__":

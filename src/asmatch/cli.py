@@ -12,16 +12,18 @@ from sqlmodel import Session
 
 from .config import CONFIG_PATH, load_config, update_config
 from .core import (
+    add_name_to_snippet,
     add_snippet,
     clean_database_and_cache,
     compare_snippets,
-    delete_snippet,
+    delete_snippet_by_checksum,
     export_snippets,
     find_matches,
     get_db_stats,
     get_snippet_by_checksum,
     list_snippets,
     reindex_database,
+    remove_name_from_snippet,
 )
 from .database import create_db_and_tables, engine
 
@@ -175,8 +177,10 @@ def cmd_show(args: argparse.Namespace, session: Session, _config: dict) -> None:
 
 def cmd_rm(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``rm`` command."""
-    if confirm_action(f"Are you sure you want to delete the name '{args.name}'?"):
-        delete_snippet(session, args.name)
+    if confirm_action(
+        f"Are you sure you want to delete the snippet with checksum '{args.checksum}'?"
+    ):
+        delete_snippet_by_checksum(session, args.checksum)
 
 
 def cmd_stats(args: argparse.Namespace, session: Session, _config: dict) -> None:
@@ -345,6 +349,38 @@ def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser_clean.set_defaults(func=cmd_clean)
 
 
+def cmd_name_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
+    """Handle the ``name add`` command."""
+    add_name_to_snippet(session, args.checksum, args.name)
+
+
+def cmd_name_remove(args: argparse.Namespace, session: Session, _config: dict) -> None:
+    """Handle the ``name remove`` command."""
+    remove_name_from_snippet(session, args.checksum, args.name)
+
+
+def add_name_subparser(subparsers: argparse._SubParsersAction) -> None:
+    """Add the ``name`` subparser to ``subparsers``."""
+    parser_name = subparsers.add_parser("name", help="Manage snippet names.")
+    name_subparsers = parser_name.add_subparsers(dest="name_command", required=True)
+
+    # Add name subparser
+    parser_name_add = name_subparsers.add_parser(
+        "add", help="Add a new name to a snippet."
+    )
+    parser_name_add.add_argument("checksum", help="The checksum of the snippet.")
+    parser_name_add.add_argument("name", help="The new name for the snippet.")
+    parser_name_add.set_defaults(func=cmd_name_add)
+
+    # Remove name subparser
+    parser_name_remove = name_subparsers.add_parser(
+        "remove", help="Remove a name from a snippet."
+    )
+    parser_name_remove.add_argument("checksum", help="The checksum of the snippet.")
+    parser_name_remove.add_argument("name", help="The name to remove.")
+    parser_name_remove.set_defaults(func=cmd_name_remove)
+
+
 def add_config_subparser(subparsers: argparse._SubParsersAction) -> None:
     """Add the ``config`` subparser to ``subparsers``."""
     parser_config = subparsers.add_parser("config", help="Manage user configuration.")
@@ -436,9 +472,9 @@ def add_rm_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser_rm = subparsers.add_parser(
         "rm",
         aliases=["del"],
-        help="Remove a snippet name. If it's the last name, the snippet is deleted.",
+        help="Remove a snippet by its checksum.",
     )
-    parser_rm.add_argument("name", help="The name of the snippet to remove.")
+    parser_rm.add_argument("checksum", help="The checksum of the snippet to remove.")
     parser_rm.set_defaults(func=cmd_rm)
 
 
@@ -537,6 +573,7 @@ def get_parser(config: dict) -> argparse.ArgumentParser:
     add_config_subparser(subparsers)
     add_compare_subparser(subparsers)
     add_clean_subparser(subparsers)
+    add_name_subparser(subparsers)
 
     return parser
 
