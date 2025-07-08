@@ -191,3 +191,21 @@ python -m unittest discover tests
 ## Development
 
 For guidelines on contributing to this project, especially when using AI agents, please see [AGENTS.md](./AGENTS.md).
+
+### Generating Test Data
+
+The `tests/generate_data.py` script can be used to create a large number of randomized assembly files for performance testing and validation.
+
+**Usage:**
+```bash
+python tests/generate_data.py
+```
+
+This will generate 1000 new `.asm` files in the `data/` directory. You can then import them into `asmatch` using the `import` command:
+```bash
+asmatch import data/
+```
+
+## Visual Flowcharts
+
+For a visual representation of the core workflows, see the [Flowcharts](./docs/flowcharts.md).
