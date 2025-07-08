@@ -58,7 +58,7 @@ def setup_logging(args: argparse.Namespace) -> None:
 
 def cmd_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``add`` command."""
-    snippet = add_snippet(session, args.name, args.code)
+    snippet = add_snippet(session, args.name, args.code, quiet=args.quiet)
     if snippet:
         logger.info(
             "Snippet with checksum %s now has names: %s",
@@ -106,7 +106,7 @@ def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> Non
         name = os.path.splitext(os.path.basename(file_path))[0]
         with open(file_path, "r", encoding="utf-8") as f:
             code = f.read()
-        snippet = add_snippet(session, name, code)
+        snippet = add_snippet(session, name, code, quiet=args.quiet)
         if snippet:
             snippets_added += 1
 
@@ -185,7 +185,7 @@ def cmd_rm(args: argparse.Namespace, session: Session, _config: dict) -> None:
     if confirm_action(
         f"Are you sure you want to delete the snippet with checksum '{args.checksum}'?"
     ):
-        if not delete_snippet_by_checksum(session, args.checksum):
+        if not delete_snippet_by_checksum(session, args.checksum, quiet=args.quiet):
             raise CLIError(f"Snippet with checksum '{args.checksum}' not found.")
 
 
@@ -370,12 +370,12 @@ def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 def cmd_name_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``name add`` command."""
-    add_name_to_snippet(session, args.checksum, args.name)
+    add_name_to_snippet(session, args.checksum, args.name, quiet=args.quiet)
 
 
 def cmd_name_remove(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``name remove`` command."""
-    remove_name_from_snippet(session, args.checksum, args.name)
+    remove_name_from_snippet(session, args.checksum, args.name, quiet=args.quiet)
 
 
 def add_name_subparser(subparsers: argparse._SubParsersAction) -> None:
