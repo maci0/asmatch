@@ -58,8 +58,8 @@ def setup_logging(args: argparse.Namespace) -> None:
 
 def cmd_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``add`` command."""
-    snippet = add_snippet(session, args.name, args.code, quiet=args.quiet)
-    if snippet:
+    snippet = add_snippet(session, args.name, args.code)
+    if snippet and not args.quiet:
         logger.info(
             "Snippet with checksum %s now has names: %s",
             snippet.checksum,
@@ -77,8 +77,9 @@ def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> Non
     stats = export_snippets(session, args.directory)
 
     if args.json:
-        logger.info(json.dumps(stats, indent=2))
-    else:
+        if not args.quiet:
+            logger.info(json.dumps(stats, indent=2))
+    elif not args.quiet:
         logger.info("--- Export Complete ---")
         logger.info("  Snippets exported: %s", stats["num_exported"])
         logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
@@ -106,7 +107,7 @@ def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> Non
         name = os.path.splitext(os.path.basename(file_path))[0]
         with open(file_path, "r", encoding="utf-8") as f:
             code = f.read()
-        snippet = add_snippet(session, name, code, quiet=args.quiet)
+        snippet = add_snippet(session, name, code)
         if snippet:
             snippets_added += 1
 
@@ -121,8 +122,9 @@ def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> Non
     }
 
     if args.json:
-        logger.info(json.dumps(stats, indent=2))
-    else:
+        if not args.quiet:
+            logger.info(json.dumps(stats, indent=2))
+    elif not args.quiet:
         logger.info("--- Import Complete ---")
         logger.info("  Snippets processed: %s", stats["num_imported"])
         logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
@@ -145,13 +147,14 @@ def cmd_list(args: argparse.Namespace, session: Session, _config: dict) -> None:
 
     snippets = list_snippets(session, start, end)
     if args.json:
-        logger.info(
-            json.dumps(
-                [{"checksum": s.checksum, "names": s.name_list} for s in snippets],
-                indent=2,
+        if not args.quiet:
+            logger.info(
+                json.dumps(
+                    [{"checksum": s.checksum, "names": s.name_list} for s in snippets],
+                    indent=2,
+                )
             )
-        )
-    else:
+    elif not args.quiet:
         for snippet in snippets:
             logger.info("Checksum: %s, Names: %s", snippet.checksum, snippet.name_list)
 
@@ -164,20 +167,22 @@ def cmd_show(args: argparse.Namespace, session: Session, _config: dict) -> None:
         return
 
     if args.json:
-        logger.info(
-            json.dumps(
-                {
-                    "checksum": snippet.checksum,
-                    "names": snippet.name_list,
-                    "code": snippet.code,
-                },
-                indent=2,
+        if not args.quiet:
+            logger.info(
+                json.dumps(
+                    {
+                        "checksum": snippet.checksum,
+                        "names": snippet.name_list,
+                        "code": snippet.code,
+                    },
+                    indent=2,
+                )
             )
-        )
-    else:
+    elif not args.quiet:
         logger.info("Checksum: %s", snippet.checksum)
         logger.info("Names: %s", snippet.name_list)
         logger.info("Code:\n%s", snippet.code)
+
 
 
 def cmd_rm(args: argparse.Namespace, session: Session, _config: dict) -> None:
@@ -193,8 +198,9 @@ def cmd_stats(args: argparse.Namespace, session: Session, _config: dict) -> None
     """Handle the ``stats`` command."""
     stats = get_db_stats(session)
     if args.json:
-        logger.info(json.dumps(stats, indent=2))
-    else:
+        if not args.quiet:
+            logger.info(json.dumps(stats, indent=2))
+    elif not args.quiet:
         logger.info("--- Database Statistics ---")
         logger.info("  Number of snippets: %s", stats["num_snippets"])
         logger.info(
@@ -213,8 +219,9 @@ def cmd_reindex(args: argparse.Namespace, session: Session, _config: dict) -> No
 
     stats = reindex_database(session)
     if args.json:
-        logger.info(json.dumps(stats, indent=2))
-    else:
+        if not args.quiet:
+            logger.info(json.dumps(stats, indent=2))
+    elif not args.quiet:
         logger.info("--- Re-indexing Complete ---")
         logger.info("  Snippets re-indexed: %s", stats["num_reindexed"])
         logger.info("  Total time elapsed: %.4f seconds", stats["time_elapsed"])
@@ -244,23 +251,24 @@ def cmd_find(args: argparse.Namespace, session: Session, _config: dict) -> None:
     )
 
     if args.json:
-        logger.info(
-            json.dumps(
-                {
-                    "lsh_candidates": num_candidates,
-                    "matches": [
-                        {
-                            "checksum": snippet.checksum,
-                            "names": snippet.name_list,
-                            "score": score,
-                        }
-                        for snippet, score in matches
-                    ],
-                },
-                indent=2,
+        if not args.quiet:
+            logger.info(
+                json.dumps(
+                    {
+                        "lsh_candidates": num_candidates,
+                        "matches": [
+                            {
+                                "checksum": snippet.checksum,
+                                "names": snippet.name_list,
+                                "score": score,
+                            }
+                            for snippet, score in matches
+                        ],
+                    },
+                    indent=2,
+                )
             )
-        )
-    else:
+    elif not args.quiet:
         logger.info("Found %s candidates via LSH.", num_candidates)
         if matches:
             logger.info("--- Top Matches ---")
@@ -278,10 +286,12 @@ def cmd_find(args: argparse.Namespace, session: Session, _config: dict) -> None:
 def cmd_config(args: argparse.Namespace, _session: Session, config: dict) -> None:
     """Handle the ``config`` command."""
     if args.config_command == "path":
-        logger.info(CONFIG_PATH)
+        if not args.quiet:
+            logger.info(CONFIG_PATH)
     elif args.config_command == "list":
-        for key, value in config.items():
-            logger.info("%s = %s", key, value)
+        if not args.quiet:
+            for key, value in config.items():
+                logger.info("%s = %s", key, value)
     elif args.config_command == "set":
         if args.key == "lsh_threshold":
             value = float(args.value)
@@ -289,7 +299,8 @@ def cmd_config(args: argparse.Namespace, _session: Session, config: dict) -> Non
             value = int(args.value)
 
         new_config = update_config(args.key, value)
-        logger.info("Set %s to %s", args.key, value)
+        if not args.quiet:
+            logger.info("Set %s to %s", args.key, value)
         config.update(new_config)
 
 
@@ -300,56 +311,60 @@ def cmd_compare(args: argparse.Namespace, session: Session, _config: dict) -> No
         raise CLIError("One or both snippets could not be found.")
 
     if args.json:
-        logger.info(json.dumps(comparison, indent=2))
+        if not args.quiet:
+            logger.info(json.dumps(comparison, indent=2))
         return
 
-    s1 = comparison["snippet1"]
-    s2 = comparison["snippet2"]
-    comp = comparison["comparison"]
+    if not args.quiet:
+        s1 = comparison["snippet1"]
+        s2 = comparison["snippet2"]
+        comp = comparison["comparison"]
 
-    def format_output(label: str, value: str, color: str = "") -> str:
-        if args.no_color or not color:
-            return f"{label}{value}"
-        return f"\033[{color}m{label}{value}\033[0m"
+        def format_output(label: str, value: str, color: str = "") -> str:
+            if args.no_color or not color:
+                return f"{label}{value}"
+            return f"\033[{color}m{label}{value}\033[0m"
 
-    logger.info("--- Snippet Comparison ---")
-    logger.info(
-        format_output("Snippet 1: ", f"{s1['names']} ({s1['checksum'][:12]}...)", "1")
-    )
-    logger.info(
-        format_output("Snippet 2: ", f"{s2['names']} ({s2['checksum'][:12]}...)", "1")
-    )
+        logger.info("--- Snippet Comparison ---")
+        logger.info(
+            format_output("Snippet 1: ", f"{s1['names']} ({s1['checksum'][:12]}...)", "1")
+        )
+        logger.info(
+            format_output("Snippet 2: ", f"{s2['names']} ({s2['checksum'][:12]}...)", "1")
+        )
 
-    logger.info("\n--- Similarity Metrics ---")
-    logger.info(
-        format_output(
-            "  Jaccard Similarity (Structure): ",
-            f"{comp['jaccard_similarity']:.2f}",
-            "92",
+        logger.info("\n--- Similarity Metrics ---")
+        logger.info(
+            format_output(
+                "  Jaccard Similarity (Structure): ",
+                f"{comp['jaccard_similarity']:.2f}",
+                "92",
+            )
         )
-    )
-    logger.info(
-        format_output(
-            "  Levenshtein Score (Code):       ",
-            f"{comp['levenshtein_score']:.2f}",
-            "93",
+        logger.info(
+            format_output(
+                "  Levenshtein Score (Code):       ",
+                f"{comp['levenshtein_score']:.2f}",
+                "93",
+            )
         )
-    )
-    logger.info(
-        format_output(
-            "  Shared Normalized Tokens:       ",
-            str(comp["shared_normalized_tokens"]),
-            "94",
+        logger.info(
+            format_output(
+                "  Shared Normalized Tokens:       ",
+                str(comp["shared_normalized_tokens"]),
+                "94",
+            )
         )
-    )
+
 
 
 def cmd_clean(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``clean`` command."""
     stats = clean_database_and_cache(session)
     if args.json:
-        logger.info(json.dumps(stats, indent=2))
-    else:
+        if not args.quiet:
+            logger.info(json.dumps(stats, indent=2))
+    elif not args.quiet:
         logger.info("--- Database and Cache Cleaned ---")
         if stats.get("vacuum_success"):
             logger.info("  Database vacuumed successfully.")

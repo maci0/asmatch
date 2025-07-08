@@ -37,7 +37,7 @@ class TestAsmatch(unittest.TestCase):
         code = "MOV EAX, 1"
         checksum = get_checksum(code)
 
-        add_snippet(self.session, name, code, quiet=True)
+        add_snippet(self.session, name, code)
 
         retrieved = get_snippet_by_checksum(self.session, checksum)
         self.assertIsNotNone(retrieved)
@@ -51,8 +51,8 @@ class TestAsmatch(unittest.TestCase):
         name2 = "snippet_two"
         code = "MOV EBX, 2"
 
-        add_snippet(self.session, name1, code, quiet=True)
-        result = add_snippet(self.session, name2, code, quiet=True)
+        add_snippet(self.session, name1, code)
+        result = add_snippet(self.session, name2, code)
         self.assertIsNotNone(result)
 
         snippets = self.session.exec(select(Snippet)).all()
@@ -79,7 +79,7 @@ class TestAsmatch(unittest.TestCase):
             jnz string_copy
         """
         snippet1_checksum = get_checksum(snippet1_code)
-        add_snippet(self.session, snippet1_name, snippet1_code, quiet=True)
+        add_snippet(self.session, snippet1_name, snippet1_code)
 
         snippet2_name = "sum_array"
         snippet2_code = """
@@ -89,7 +89,7 @@ class TestAsmatch(unittest.TestCase):
             dec ecx
             jnz sum_loop
         """
-        add_snippet(self.session, snippet2_name, snippet2_code, quiet=True)
+        add_snippet(self.session, snippet2_name, snippet2_code)
 
         query = """
         copy_loop:
@@ -109,8 +109,8 @@ class TestAsmatch(unittest.TestCase):
         large_code = "\n".join(["MOV EAX, EBX"] * 1000)
         unicode_code = "MOV EAX, 1 ; π≈3.14"
 
-        add_snippet(self.session, "big", large_code, quiet=True)
-        add_snippet(self.session, "unicode", unicode_code, quiet=True)
+        add_snippet(self.session, "big", large_code)
+        add_snippet(self.session, "unicode", unicode_code)
 
         checksum_large = get_checksum(large_code)
         checksum_unicode = get_checksum(unicode_code)

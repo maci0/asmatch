@@ -46,3 +46,25 @@ By following these principles and providing clear instructions, we can ensure th
 - Keep `README.md` current with details on the search flow and usage.
 - Update `docs/user_stories.md` whenever commands or options change.
 - Documentation updates should be included in the same pull request as code changes whenever possible.
+
+## Testing and Quality Assurance
+
+Before committing any changes, ensure they are thoroughly tested by running the following checks:
+
+1.  **Run unit and integration tests:**
+    ```bash
+    pytest
+    ```
+2.  **Perform static type checking:**
+    ```bash
+    mypy src/
+    ```
+3.  **Lint and format the code:**
+    ```bash
+    ruff check . --fix
+    black .
+    ```
+4.  **Run a final, comprehensive linting check:**
+    ```bash
+    pylint src/asmatch/ tests/
+    ```

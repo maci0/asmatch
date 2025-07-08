@@ -133,7 +133,7 @@ def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
 # --- Application Logic Functions ---
 
 
-def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
+def add_snippet(session: Session, name: str, code: str):
     """Add a new snippet or alias to the database."""
     checksum = get_checksum(code)
 
