@@ -133,29 +133,22 @@ def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
 # --- Application Logic Functions ---
 
 
-def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
+def add_snippet(session: Session, name: str, code: str):
     """Add a new snippet or alias to the database."""
     checksum = get_checksum(code)
-
-    existing_snippet_by_name = Snippet.get_by_name(session, name)
-    if existing_snippet_by_name:
-        if not quiet:
-            logger.error(
-                "Name '%s' is already associated with a different snippet.", name
-            )
-        return None
 
     existing_snippet = Snippet.get_by_checksum(session, checksum)
 
     if existing_snippet:
         # Code exists, add new name as an alias
         name_list = existing_snippet.name_list
-        name_list.append(name)
-        existing_snippet.names = json.dumps(name_list)
-        session.add(existing_snippet)
-        session.commit()
-        session.refresh(existing_snippet)
-        invalidate_lsh_cache()
+        if name and name not in name_list:
+            name_list.append(name)
+            existing_snippet.names = json.dumps(name_list)
+            session.add(existing_snippet)
+            session.commit()
+            session.refresh(existing_snippet)
+            invalidate_lsh_cache()
         return existing_snippet
 
     # Snippet with this code does not exist, create a new one
@@ -237,43 +230,6 @@ def delete_snippet_by_checksum(session: Session, checksum: str, quiet: bool = Fa
 
     invalidate_lsh_cache()
     return True
-
-
-def delete_snippet(session: Session, name: str, quiet: bool = False):
-    """Delete a name from a snippet or remove the snippet entirely."""
-    snippet = Snippet.get_by_name(session, name)
-    if not snippet:
-        if not quiet:
-            logger.error("Snippet with name '%s' not found.", name)
-        return False
-
-    name_list = snippet.name_list
-    if len(name_list) > 1:
-        name_list.remove(name)
-        snippet.names = json.dumps(name_list)
-        session.add(snippet)
-        session.commit()
-        if not quiet:
-            logger.info(
-                "Removed name '%s' from snippet. %s names remain.",
-                name,
-                len(name_list),
-            )
-    else:
-        session.delete(snippet)
-        session.commit()
-        if not quiet:
-            logger.info("Removed last name '%s'. Deleting snippet.", name)
-
-    invalidate_lsh_cache()
-    return True
-
-
-def update_snippet(_session: Session, _name: str, _new_code: str):
-    """Deprecated no-op function kept for backward compatibility."""
-    logger.warning(
-        "'update snippet' is deprecated. Use create and delete for alias management."
-    )
 
 
 def reindex_database(session: Session):

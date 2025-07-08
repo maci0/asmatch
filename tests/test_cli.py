@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 import tomli
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine, select
 
 from asmatch.core import add_snippet
 from asmatch.models import Snippet
@@ -261,6 +261,43 @@ class TestCLI(unittest.TestCase):
         result = self.run_command(f"--no-color compare {s1.checksum} {s2.checksum}")
         self.assertEqual(result.returncode, 0)
         self.assertNotIn("\033[1m", result.stdout)
+
+    def test_add_snippet_with_no_name(self):
+        """Test that a snippet can be added with no name."""
+        result = self.run_command("add '' 'MOV ECX, 3'")
+        self.assertEqual(result.returncode, 0)
+
+        with Session(self.engine) as session:
+            snippet = Snippet.get_by_name(session, "")
+            self.assertIsNotNone(snippet)
+
+    def test_add_multiple_snippets_with_no_name(self):
+        """Test that multiple snippets can be added with no name."""
+        result = self.run_command("add '' 'MOV EDX, 4'")
+        self.assertEqual(result.returncode, 0)
+
+        result = self.run_command("add '' 'MOV ESI, 5'")
+        self.assertEqual(result.returncode, 0)
+
+        with Session(self.engine) as session:
+            snippets = session.exec(
+                select(Snippet).where(Snippet.names == '[""]')
+            ).all()
+            self.assertEqual(len(snippets), 2)
+
+    def test_add_multiple_snippets_with_same_name(self):
+        """Test that multiple snippets can be added with the same name."""
+        result = self.run_command("add same_name 'MOV EDI, 6'")
+        self.assertEqual(result.returncode, 0)
+
+        result = self.run_command("add same_name 'MOV EBP, 7'")
+        self.assertEqual(result.returncode, 0)
+
+        with Session(self.engine) as session:
+            snippets = session.exec(
+                select(Snippet).where(Snippet.names == '["same_name"]')
+            ).all()
+            self.assertEqual(len(snippets), 2)
 
 
 if __name__ == "__main__":
