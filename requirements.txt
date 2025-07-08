@@ -6,3 +6,4 @@ tomli
 tomli_w
 setuptools
 pytest
+mypy

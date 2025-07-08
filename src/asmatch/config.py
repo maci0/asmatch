@@ -1,5 +1,6 @@
 """Configuration loader for asmatch."""
 
+import logging
 import os
 import tempfile
 
@@ -18,6 +19,8 @@ DEFAULTS = {
     "top_n": 5,
 }
 
+logger = logging.getLogger(__name__)
+
 
 def save_config(config: dict) -> None:
     """Write ``config`` to ``CONFIG_PATH`` atomically."""
@@ -31,7 +34,7 @@ def save_config(config: dict) -> None:
     os.replace(tmp_path, CONFIG_PATH)
 
 
-def update_config(key: str, value) -> dict:
+def update_config(key: str, value: int | float) -> dict:
     """Update ``key`` in the config file with ``value`` and return the new config."""
     config = {}
     if os.path.exists(CONFIG_PATH):
@@ -57,5 +60,5 @@ def load_config() -> dict:
             # Merge user config with defaults, user config takes precedence
             return {**DEFAULTS, **user_config}
         except tomli.TOMLDecodeError as e:
-            print(f"Error decoding config file at {CONFIG_PATH}: {e}")
+            logger.error("Error decoding config file at %s: %s", CONFIG_PATH, e)
             return DEFAULTS

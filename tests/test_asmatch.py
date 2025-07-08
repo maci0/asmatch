@@ -117,6 +117,22 @@ class TestAsmatch(unittest.TestCase):
         # The key of the match should be the checksum
         self.assertEqual(matches[0][0].checksum, snippet1_checksum)
 
+    def test_large_and_unicode_snippets(self):
+        """Ensure very large and unicode-heavy snippets are handled."""
+        large_code = "\n".join(["MOV EAX, EBX"] * 1000)
+        unicode_code = "MOV EAX, 1 ; π≈3.14"
+
+        add_snippet(self.session, "big", large_code, quiet=True)
+        add_snippet(self.session, "unicode", unicode_code, quiet=True)
+
+        checksum_large = get_checksum(large_code)
+        checksum_unicode = get_checksum(unicode_code)
+
+        self.assertIsNotNone(get_snippet_by_checksum(self.session, checksum_large))
+        self.assertIsNotNone(
+            get_snippet_by_checksum(self.session, checksum_unicode)
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

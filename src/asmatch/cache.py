@@ -55,7 +55,7 @@ def build_lsh_index(session: Session, threshold: float, num_perm: int) -> MinHas
     return lsh
 
 
-def save_lsh_cache(session: Session, lsh, threshold: float):
+def save_lsh_cache(session: Session, lsh: MinHashLSH, threshold: float) -> None:
     """Save the LSH index and the current DB checksum to the cache."""
     if not os.path.exists(CACHE_DIR):
         os.makedirs(CACHE_DIR)
@@ -68,7 +68,7 @@ def save_lsh_cache(session: Session, lsh, threshold: float):
         f.write(get_db_checksum(session))
 
 
-def load_lsh_cache(session: Session, threshold: float):
+def load_lsh_cache(session: Session, threshold: float) -> MinHashLSH | None:
     """Load the LSH index from cache if it is still valid."""
     lsh_cache_path = get_lsh_cache_path(threshold)
     if not os.path.exists(lsh_cache_path) or not os.path.exists(DB_CHECKSUM_PATH):

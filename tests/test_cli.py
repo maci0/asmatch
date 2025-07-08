@@ -78,6 +78,18 @@ class TestCLI(unittest.TestCase):
         self.assertIn("Top Matches", result.stdout)
         self.assertIn("test_snippet", result.stdout)
 
+    def test_find_invalid_threshold(self):
+        """Invalid threshold values should return an error."""
+        result = self.run_command("find --threshold 2.0 --query 'x'")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("threshold", result.stdout)
+
+    def test_compare_missing_snippet(self):
+        """Comparing unknown checksums should fail."""
+        result = self.run_command("compare deadbeef cafebabe")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not be found", result.stdout)
+
     def test_add_command(self):
         """Test the add command."""
         result = self.run_command("add new_snippet 'MOV EBX, 2'")

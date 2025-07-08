@@ -107,6 +107,24 @@ top_n = 5
 
 You can manage this file with the `asmatch config` command.
 
+### Quickstart
+
+After installing the dependencies, the quickest way to try the tool is:
+
+```bash
+# initialize the database and config
+python -m asmatch.cli stats
+
+# add a snippet
+asmatch add hello_world "MOV EAX, 1"
+
+# search for it
+asmatch find --query "MOV EAX, 1"
+```
+
+This will create the database in the current directory and demonstrate a full
+add/find cycle.
+
 ### 3. Usage
 
 The CLI can be invoked directly with `asmatch` or by running `python -m asmatch`.
@@ -178,8 +196,15 @@ asmatch find --threshold 0.2 --query "push esi; mov esi, dword [esp+0CH]; push e
 
 ```bash
 # search for a function
-asmatch find --file tests/test_data/1000A0A0.asm 
+asmatch find --file tests/test_data/1000A0A0.asm
 ```
+
+## Performance Considerations
+
+The LSH cache is stored under `~/.cache/asmatch` by default. Set the
+`ASMATCH_CACHE_DIR` environment variable to place it elsewhere. Building the
+index for large databases can consume significant memory, so running on a
+machine with ample RAM and a fast drive will yield the best performance.
 
 ### 5. Running Tests
 
