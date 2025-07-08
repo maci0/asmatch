@@ -35,6 +35,59 @@ def get_normalized_string(code_snippet: str) -> str:
     ).strip()
 
 
+def add_name_to_snippet(
+    session: Session, checksum: str, new_name: str, quiet: bool = False
+):
+    """Add a new name to an existing snippet."""
+    snippet = Snippet.get_by_checksum(session, checksum)
+    if not snippet:
+        if not quiet:
+            print(f"Error: Snippet with checksum '{checksum}' not found.")
+        return None
+
+    name_list = snippet.name_list
+    if new_name in name_list:
+        if not quiet:
+            print(f"Error: Name '{new_name}' already exists for this snippet.")
+        return None
+
+    name_list.append(new_name)
+    snippet.names = json.dumps(name_list)
+    session.add(snippet)
+    session.commit()
+    session.refresh(snippet)
+    return snippet
+
+
+def remove_name_from_snippet(
+    session: Session, checksum: str, name_to_remove: str, quiet: bool = False
+):
+    """Remove a name from a snippet."""
+    snippet = Snippet.get_by_checksum(session, checksum)
+    if not snippet:
+        if not quiet:
+            print(f"Error: Snippet with checksum '{checksum}' not found.")
+        return None
+
+    name_list = snippet.name_list
+    if name_to_remove not in name_list:
+        if not quiet:
+            print(f"Error: Name '{name_to_remove}' not found for this snippet.")
+        return None
+
+    if len(name_list) == 1:
+        if not quiet:
+            print("Error: Cannot remove the last name from a snippet.")
+        return None
+
+    name_list.remove(name_to_remove)
+    snippet.names = json.dumps(name_list)
+    session.add(snippet)
+    session.commit()
+    session.refresh(snippet)
+    return snippet
+
+
 def get_checksum(code_snippet: str) -> str:
     """Calculate the SHA256 checksum of a normalized code snippet."""
     normalized_string = get_normalized_string(code_snippet)
@@ -164,6 +217,23 @@ def find_matches(
     ]
 
     return len(candidate_keys), top_matches
+
+
+def delete_snippet_by_checksum(session: Session, checksum: str, quiet: bool = False):
+    """Delete a snippet by its checksum."""
+    snippet = Snippet.get_by_checksum(session, checksum)
+    if not snippet:
+        if not quiet:
+            print(f"Error: Snippet with checksum '{checksum}' not found.")
+        return False
+
+    session.delete(snippet)
+    session.commit()
+    if not quiet:
+        print(f"Snippet with checksum '{checksum}' deleted.")
+
+    invalidate_lsh_cache()
+    return True
 
 
 def delete_snippet(session: Session, name: str, quiet: bool = False):
