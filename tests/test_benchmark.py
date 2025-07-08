@@ -36,11 +36,14 @@ class TestBenchmarkScript(unittest.TestCase):
         self.assertFalse(os.path.exists(DATA_DIR))
 
         # Run the benchmark script
+        env = os.environ.copy()
+        env["PYTHONPATH"] = "."
         result = subprocess.run(
             ["python", "tests/benchmark.py"],
             capture_output=True,
             text=True,
             check=False,
+            env=env,
         )
 
         # Check that the script executed successfully
