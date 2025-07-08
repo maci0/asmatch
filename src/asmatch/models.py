@@ -8,7 +8,7 @@ from datasketch import MinHash
 from sqlmodel import Field, Session, SQLModel, select
 
 
-class Snippet(SQLModel, table=True):
+class Snippet(SQLModel, table=True):  # type: ignore
     """Model representing a stored assembly snippet."""
 
     checksum: str = Field(primary_key=True)

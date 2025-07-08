@@ -10,7 +10,7 @@ import unittest
 import tomli
 from sqlmodel import Session, SQLModel, create_engine, select
 
-from asmatch.core import add_snippet
+from asmatch.core import snippet_add
 from asmatch.models import Snippet
 
 
@@ -23,7 +23,7 @@ class BaseCLITest(unittest.TestCase):
         self.engine = create_engine(f"sqlite:///{self.db_name}")
         SQLModel.metadata.create_all(self.engine)
         with Session(self.engine) as session:
-            add_snippet(session, "test_snippet", "MOV EAX, 1")
+            snippet_add(session, "test_snippet", "MOV EAX, 1")
 
     def tearDown(self):
         """Clean up the database after each test."""
@@ -226,7 +226,7 @@ class TestCLIOptions(BaseCLITest):
     def test_no_color_flag(self):
         """Test that the --no-color flag disables colored output."""
         with Session(self.engine) as session:
-            add_snippet(session, "snippet2", "MOV EBX, 2")
+            snippet_add(session, "snippet2", "MOV EBX, 2")
             s1 = Snippet.get_by_name(session, "test_snippet")
             s2 = Snippet.get_by_name(session, "snippet2")
 

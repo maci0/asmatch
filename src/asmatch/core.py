@@ -38,7 +38,7 @@ def get_normalized_string(code_snippet: str) -> str:
     ).strip()
 
 
-def add_name_to_snippet(
+def snippet_name_add(
     session: Session, checksum: str, new_name: str, quiet: bool = False
 ):
     """Add a new name to an existing snippet."""
@@ -62,7 +62,7 @@ def add_name_to_snippet(
     return snippet
 
 
-def remove_name_from_snippet(
+def snippet_name_remove(
     session: Session, checksum: str, name_to_remove: str, quiet: bool = False
 ):
     """Remove a name from a snippet."""
@@ -133,7 +133,7 @@ def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
 # --- Application Logic Functions ---
 
 
-def add_snippet(session: Session, name: str, code: str):
+def snippet_add(session: Session, name: str, code: str):
     """Add a new snippet or alias to the database."""
     checksum = get_checksum(code)
 
@@ -168,7 +168,7 @@ def add_snippet(session: Session, name: str, code: str):
     return new_snippet
 
 
-def find_matches(
+def snippet_find_matches(
     session: Session,
     query_string: str,
     top_n: int = 3,
@@ -215,7 +215,7 @@ def find_matches(
     return len(candidate_keys), top_matches
 
 
-def delete_snippet_by_checksum(session: Session, checksum: str, quiet: bool = False):
+def snippet_delete(session: Session, checksum: str, quiet: bool = False):
     """Delete a snippet by its checksum."""
     snippet = Snippet.get_by_checksum(session, checksum)
     if not snippet:
@@ -232,7 +232,7 @@ def delete_snippet_by_checksum(session: Session, checksum: str, quiet: bool = Fa
     return True
 
 
-def reindex_database(session: Session):
+def db_reindex(session: Session):
     """Recalculate the MinHash for every snippet in the database."""
     start_time = time.time()
     snippets = Snippet.get_all(session)
@@ -259,15 +259,15 @@ def reindex_database(session: Session):
     }
 
 
-def get_snippet_by_checksum(session: Session, checksum: str):
+def snippet_get(session: Session, checksum: str):
     """Return a snippet by its checksum."""
     return Snippet.get_by_checksum(session, checksum)
 
 
-def compare_snippets(session: Session, checksum1: str, checksum2: str) -> dict | None:
+def snippet_compare(session: Session, checksum1: str, checksum2: str) -> dict | None:
     """Compare two snippets and return similarity metrics."""
-    snippet1 = get_snippet_by_checksum(session, checksum1)
-    snippet2 = get_snippet_by_checksum(session, checksum2)
+    snippet1 = snippet_get(session, checksum1)
+    snippet2 = snippet_get(session, checksum2)
 
     if not snippet1 or not snippet2:
         return None
@@ -323,7 +323,7 @@ def get_average_similarity(session: Session, sample_size: int = 100) -> float:
     return total_similarity / num_comparisons if num_comparisons > 0 else 1.0
 
 
-def get_db_stats(session: Session):
+def db_stats(session: Session):
     """Return a dictionary of database statistics."""
     snippets = Snippet.get_all(session)
     if not snippets:
@@ -348,14 +348,14 @@ def get_db_stats(session: Session):
     }
 
 
-def list_snippets(session: Session, start: int = 0, end: int = 0):
+def snippet_list(session: Session, start: int = 0, end: int = 0):
     """List snippets, optionally within a given range."""
     if end > 0:
         return session.exec(select(Snippet).offset(start).limit(end - start)).all()
     return Snippet.get_all(session)
 
 
-def export_snippets(session: Session, export_dir: str) -> dict:
+def snippet_export(session: Session, export_dir: str) -> dict:
     """Export all snippets to a directory."""
     start_time = time.time()
     snippets = Snippet.get_all(session)
@@ -383,7 +383,7 @@ def export_snippets(session: Session, export_dir: str) -> dict:
     }
 
 
-def clean_database_and_cache(session: Session) -> dict:
+def db_clean(session: Session) -> dict:
     """Clean the LSH cache and vacuum the database."""
     start_time = time.time()
 

@@ -12,18 +12,18 @@ from sqlmodel import Session
 
 from .config import CONFIG_PATH, load_config, update_config
 from .core import (
-    add_name_to_snippet,
-    add_snippet,
-    clean_database_and_cache,
-    compare_snippets,
-    delete_snippet_by_checksum,
-    export_snippets,
-    find_matches,
-    get_db_stats,
-    get_snippet_by_checksum,
-    list_snippets,
-    reindex_database,
-    remove_name_from_snippet,
+    db_clean,
+    db_reindex,
+    db_stats,
+    snippet_add,
+    snippet_compare,
+    snippet_delete,
+    snippet_export,
+    snippet_find_matches,
+    snippet_get,
+    snippet_list,
+    snippet_name_add,
+    snippet_name_remove,
 )
 from .database import create_db_and_tables, engine
 
@@ -58,7 +58,7 @@ def setup_logging(args: argparse.Namespace) -> None:
 
 def cmd_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``add`` command."""
-    snippet = add_snippet(session, args.name, args.code)
+    snippet = snippet_add(session, args.name, args.code)
     if snippet and not args.quiet:
         logger.info(
             "Snippet with checksum %s now has names: %s",
@@ -74,7 +74,7 @@ def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> Non
     ):
         return
 
-    stats = export_snippets(session, args.directory)
+    stats = snippet_export(session, args.directory)
 
     if args.json:
         if not args.quiet:
@@ -107,7 +107,7 @@ def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> Non
         name = os.path.splitext(os.path.basename(file_path))[0]
         with open(file_path, "r", encoding="utf-8") as f:
             code = f.read()
-        snippet = add_snippet(session, name, code)
+        snippet = snippet_add(session, name, code)
         if snippet:
             snippets_added += 1
 
@@ -145,7 +145,7 @@ def cmd_list(args: argparse.Namespace, session: Session, _config: dict) -> None:
             return
         start, end = map(int, parts)
 
-    snippets = list_snippets(session, start, end)
+    snippets = snippet_list(session, start, end)
     if args.json:
         if not args.quiet:
             logger.info(
@@ -161,7 +161,7 @@ def cmd_list(args: argparse.Namespace, session: Session, _config: dict) -> None:
 
 def cmd_show(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``show`` command."""
-    snippet = get_snippet_by_checksum(session, args.checksum)
+    snippet = snippet_get(session, args.checksum)
     if not snippet:
         logger.error("Snippet with checksum %s not found.", args.checksum)
         return
@@ -189,13 +189,13 @@ def cmd_rm(args: argparse.Namespace, session: Session, _config: dict) -> None:
     if confirm_action(
         f"Are you sure you want to delete the snippet with checksum '{args.checksum}'?"
     ):
-        if not delete_snippet_by_checksum(session, args.checksum, quiet=args.quiet):
+        if not snippet_delete(session, args.checksum, quiet=args.quiet):
             raise CLIError(f"Snippet with checksum '{args.checksum}' not found.")
 
 
 def cmd_stats(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``stats`` command."""
-    stats = get_db_stats(session)
+    stats = db_stats(session)
     if args.json:
         if not args.quiet:
             logger.info(json.dumps(stats, indent=2))
@@ -216,7 +216,7 @@ def cmd_reindex(args: argparse.Namespace, session: Session, _config: dict) -> No
     ):
         return
 
-    stats = reindex_database(session)
+    stats = db_reindex(session)
     if args.json:
         if not args.quiet:
             logger.info(json.dumps(stats, indent=2))
@@ -245,7 +245,7 @@ def cmd_find(args: argparse.Namespace, session: Session, _config: dict) -> None:
     if not query_string:
         raise CLIError("No query provided. Use --query, --file, or stdin.")
 
-    num_candidates, matches = find_matches(
+    num_candidates, matches = snippet_find_matches(
         session, query_string, args.top_n, args.threshold, not args.no_normalization
     )
 
@@ -305,7 +305,7 @@ def cmd_config(args: argparse.Namespace, _session: Session, config: dict) -> Non
 
 def cmd_compare(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``compare`` command."""
-    comparison = compare_snippets(session, args.checksum1, args.checksum2)
+    comparison = snippet_compare(session, args.checksum1, args.checksum2)
     if not comparison:
         raise CLIError("One or both snippets could not be found.")
 
@@ -362,7 +362,7 @@ def cmd_compare(args: argparse.Namespace, session: Session, _config: dict) -> No
 
 def cmd_clean(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``clean`` command."""
-    stats = clean_database_and_cache(session)
+    stats = db_clean(session)
     if args.json:
         if not args.quiet:
             logger.info(json.dumps(stats, indent=2))
@@ -387,12 +387,12 @@ def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 def cmd_name_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``name add`` command."""
-    add_name_to_snippet(session, args.checksum, args.name, quiet=args.quiet)
+    snippet_name_add(session, args.checksum, args.name, quiet=args.quiet)
 
 
 def cmd_name_remove(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``name remove`` command."""
-    remove_name_from_snippet(session, args.checksum, args.name, quiet=args.quiet)
+    snippet_name_remove(session, args.checksum, args.name, quiet=args.quiet)
 
 
 def add_name_subparser(subparsers: argparse._SubParsersAction) -> None:

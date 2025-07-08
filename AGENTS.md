@@ -159,6 +159,16 @@ the previous opaque strings. This improves security and statelessness.
 BREAKING CHANGE: The format of authentication tokens has changed.
 All clients will need to be updated to handle JWTs.
 ```
+### Function Naming Conventions
+
+To improve readability and consistency, function names should follow a `noun_verb` or `noun_noun_verb` pattern. This convention makes it clear what object the function operates on and what action it performs.
+
+- **`db_verb`**: For functions that operate on the database as a whole (e.g., `db_clean`, `db_reindex`).
+- **`snippet_verb`**: For functions that operate on individual snippets (e.g., `snippet_add`, `snippet_delete`).
+- **`snippet_name_verb`**: For functions that manage the names of a snippet (e.g., `snippet_name_add`).
+
+This consistent structure helps developers quickly understand the purpose of a function just by its name.
+
 ### Conventional Commit Types
 Use the following table as a reference for choosing the correct commit type. Sticking to these types is essential for our automation tools.  
 
