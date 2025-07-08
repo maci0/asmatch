@@ -30,7 +30,6 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 **Acceptance Criteria:**
 - `asmatch add <name> "<code>"` adds a new snippet.
 - If the code already exists, the new name is added as an alias to the existing snippet.
-- The tool prevents adding a name that is already in use.
 
 ---
 

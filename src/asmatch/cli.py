@@ -106,7 +106,7 @@ def cmd_import(args: argparse.Namespace, session: Session, _config: dict) -> Non
         name = os.path.splitext(os.path.basename(file_path))[0]
         with open(file_path, "r", encoding="utf-8") as f:
             code = f.read()
-        snippet = add_snippet(session, name, code, quiet=True)
+        snippet = add_snippet(session, name, code)
         if snippet:
             snippets_added += 1
 
@@ -185,7 +185,8 @@ def cmd_rm(args: argparse.Namespace, session: Session, _config: dict) -> None:
     if confirm_action(
         f"Are you sure you want to delete the snippet with checksum '{args.checksum}'?"
     ):
-        delete_snippet_by_checksum(session, args.checksum)
+        if not delete_snippet_by_checksum(session, args.checksum):
+            raise CLIError(f"Snippet with checksum '{args.checksum}' not found.")
 
 
 def cmd_stats(args: argparse.Namespace, session: Session, _config: dict) -> None:

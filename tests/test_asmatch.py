@@ -60,19 +60,6 @@ class TestAsmatch(unittest.TestCase):
         self.assertIn(name1, snippets[0].name_list)
         self.assertIn(name2, snippets[0].name_list)
 
-    def test_duplicate_snippet_by_name(self):
-        """Test that adding a snippet with a duplicate name is prevented."""
-        name = "duplicate_name"
-        code1 = "MOV ECX, 3"
-        code2 = "MOV EDX, 4"
-
-        add_snippet(self.session, name, code1, quiet=True)
-        result = add_snippet(self.session, name, code2, quiet=True)
-        self.assertIsNone(result)
-
-        snippets = self.session.exec(select(Snippet)).all()
-        self.assertEqual(len(snippets), 1)
-
     def test_normalization(self):
         """Test the normalization function."""
         code1 = "MOV EAX, [ESP+4] ; load first argument"
