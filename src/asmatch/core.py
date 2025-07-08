@@ -331,7 +331,7 @@ def db_stats(session: Session):
             "num_snippets": 0,
             "avg_snippet_size": 0,
             "vocabulary_size": 0,
-            "avg_similarity": 0.0,
+            "avg_jaccard_similarity": 0.0,
         }
 
     total_size = sum(len(s.code) for s in snippets)
@@ -344,7 +344,7 @@ def db_stats(session: Session):
         "num_snippets": len(snippets),
         "avg_snippet_size": total_size / len(snippets),
         "vocabulary_size": len(all_tokens),
-        "avg_similarity": get_average_similarity(session),
+        "avg_jaccard_similarity": get_average_similarity(session),
     }
 
 

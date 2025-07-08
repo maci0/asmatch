@@ -5,7 +5,8 @@ import shutil
 import subprocess
 import unittest
 
-from tests.generate_data import DATA_DIR
+# This must match the DATA_DIR used in the benchmark script.
+DATA_DIR = "data"
 
 
 class TestBenchmarkScript(unittest.TestCase):

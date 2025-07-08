@@ -13,10 +13,14 @@ import subprocess
 import sys
 import time
 
-from tests.generate_data import DATA_DIR, NUM_FILES, generate_files
-
-# Add the project root to the Python path
+# The following is needed for standalone execution, but triggers a lint error.
+# pylint: disable=wrong-import-position
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from tests.generate_data import generate_files
+
+# --- Benchmark Configuration ---
+NUM_FILES = 1000
+DATA_DIR = "data"
 
 
 def run_command(command, extra_env=None):
@@ -49,12 +53,12 @@ def main():
 
     # --- 1. Generate test data ---
     print(f"Generating {NUM_FILES} assembly files for the benchmark...")
-    generate_files()
+    generate_files(data_dir=DATA_DIR, num_files=NUM_FILES)
     print("Generation complete.")
 
     # --- 2. Benchmark `import` command ---
     print(f"\n--- Benchmarking 'import' on {NUM_FILES} files ---")
-    import_time = run_command(f"import {DATA_DIR}", extra_env=extra_env)
+    import_time = run_command(f"import --force {DATA_DIR}", extra_env=extra_env)
     print(f"Import took: {import_time:.4f} seconds")
 
     # --- 3. Benchmark `find` command ---

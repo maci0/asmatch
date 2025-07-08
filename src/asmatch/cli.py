@@ -206,7 +206,10 @@ def cmd_stats(args: argparse.Namespace, session: Session, _config: dict) -> None
             "  Average snippet size: %.2f characters", stats["avg_snippet_size"]
         )
         logger.info("  Vocabulary size: %s unique tokens", stats["vocabulary_size"])
-        logger.info("  Average in-dataset similarity: %.2f", stats["avg_similarity"])
+        logger.info(
+            "  Average Jaccard similarity (sample): %.2f",
+            stats["avg_jaccard_similarity"],
+        )
 
 
 def cmd_reindex(args: argparse.Namespace, session: Session, _config: dict) -> None:
