@@ -15,23 +15,25 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install Poetry
         run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install ruff black
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: poetry install
 
       - name: Run mypy
-        run: |
-          pip install mypy
-          mypy src/asmatch
+        run: poetry run mypy src/asmatch
 
       - name: Run ruff
-        run: ruff check .
+        run: poetry run ruff check .
 
       - name: Check formatting with black
-        run: black --check .
+        run: poetry run black --check .
 
       - name: Run tests
-        run: python -m unittest discover -v
+        run: poetry run python -m unittest discover -v
+
+      - name: Run pytest
+        run: poetry run pytest -v
