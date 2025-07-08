@@ -239,6 +239,17 @@ class TestCLI(unittest.TestCase):
             snippet = Snippet.get_by_checksum(session, checksum)
             self.assertNotIn("new_name", snippet.name_list)
 
+    def test_no_color_flag(self):
+        """Test that the --no-color flag disables colored output."""
+        with Session(self.engine) as session:
+            add_snippet(session, "snippet2", "MOV EBX, 2", quiet=True)
+            s1 = Snippet.get_by_name(session, "test_snippet")
+            s2 = Snippet.get_by_name(session, "snippet2")
+
+        result = self.run_command(f"--no-color compare {s1.checksum} {s2.checksum}")
+        self.assertEqual(result.returncode, 0)
+        self.assertNotIn("\033[1m", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
