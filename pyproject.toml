@@ -26,6 +26,7 @@ black = "*"
 unittest-xml-reporting = "*"
 pre-commit = "^4.2.0"
 pylint = "^3.3.7"
+pytest-cov = "^6.2.1"
 
 [tool.poetry.scripts]
 asmatch = "asmatch.cli:main"
