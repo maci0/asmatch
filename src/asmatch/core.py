@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import logging
 import os
 import pickle
 import random
@@ -15,6 +16,8 @@ from sqlmodel import Session, select, text
 
 from .cache import build_lsh_index, invalidate_lsh_cache, load_lsh_cache, save_lsh_cache
 from .models import Snippet
+
+logger = logging.getLogger(__name__)
 
 # --- Constants and Configuration ---
 NUM_PERMUTATIONS = 128
@@ -42,13 +45,13 @@ def add_name_to_snippet(
     snippet = Snippet.get_by_checksum(session, checksum)
     if not snippet:
         if not quiet:
-            print(f"Error: Snippet with checksum '{checksum}' not found.")
+            logger.error("Snippet with checksum %s not found.", checksum)
         return None
 
     name_list = snippet.name_list
     if new_name in name_list:
         if not quiet:
-            print(f"Error: Name '{new_name}' already exists for this snippet.")
+            logger.error("Name '%s' already exists for this snippet.", new_name)
         return None
 
     name_list.append(new_name)
@@ -66,18 +69,18 @@ def remove_name_from_snippet(
     snippet = Snippet.get_by_checksum(session, checksum)
     if not snippet:
         if not quiet:
-            print(f"Error: Snippet with checksum '{checksum}' not found.")
+            logger.error("Snippet with checksum %s not found.", checksum)
         return None
 
     name_list = snippet.name_list
     if name_to_remove not in name_list:
         if not quiet:
-            print(f"Error: Name '{name_to_remove}' not found for this snippet.")
+            logger.error("Name '%s' not found for this snippet.", name_to_remove)
         return None
 
     if len(name_list) == 1:
         if not quiet:
-            print("Error: Cannot remove the last name from a snippet.")
+            logger.error("Cannot remove the last name from a snippet.")
         return None
 
     name_list.remove(name_to_remove)
@@ -137,8 +140,8 @@ def add_snippet(session: Session, name: str, code: str, quiet: bool = False):
     existing_snippet_by_name = Snippet.get_by_name(session, name)
     if existing_snippet_by_name:
         if not quiet:
-            print(
-                f"Error: Name '{name}' is already associated with a different snippet."
+            logger.error(
+                "Name '%s' is already associated with a different snippet.", name
             )
         return None
 
@@ -224,13 +227,13 @@ def delete_snippet_by_checksum(session: Session, checksum: str, quiet: bool = Fa
     snippet = Snippet.get_by_checksum(session, checksum)
     if not snippet:
         if not quiet:
-            print(f"Error: Snippet with checksum '{checksum}' not found.")
+            logger.error("Snippet with checksum %s not found.", checksum)
         return False
 
     session.delete(snippet)
     session.commit()
     if not quiet:
-        print(f"Snippet with checksum '{checksum}' deleted.")
+        logger.info("Snippet with checksum %s deleted.", checksum)
 
     invalidate_lsh_cache()
     return True
@@ -241,7 +244,7 @@ def delete_snippet(session: Session, name: str, quiet: bool = False):
     snippet = Snippet.get_by_name(session, name)
     if not snippet:
         if not quiet:
-            print(f"Error: Snippet with name '{name}' not found.")
+            logger.error("Snippet with name '%s' not found.", name)
         return False
 
     name_list = snippet.name_list
@@ -251,12 +254,16 @@ def delete_snippet(session: Session, name: str, quiet: bool = False):
         session.add(snippet)
         session.commit()
         if not quiet:
-            print(f"Removed name '{name}' from snippet. {len(name_list)} names remain.")
+            logger.info(
+                "Removed name '%s' from snippet. %s names remain.",
+                name,
+                len(name_list),
+            )
     else:
         session.delete(snippet)
         session.commit()
         if not quiet:
-            print(f"Removed last name '{name}'. Deleting snippet.")
+            logger.info("Removed last name '%s'. Deleting snippet.", name)
 
     invalidate_lsh_cache()
     return True
@@ -264,8 +271,8 @@ def delete_snippet(session: Session, name: str, quiet: bool = False):
 
 def update_snippet(_session: Session, _name: str, _new_code: str):
     """Deprecated no-op function kept for backward compatibility."""
-    print(
-        "Warning: 'update snippet' is deprecated. Use create and delete for alias management."
+    logger.warning(
+        "'update snippet' is deprecated. Use create and delete for alias management."
     )
 
 
