@@ -129,9 +129,7 @@ class TestAsmatch(unittest.TestCase):
         checksum_unicode = get_checksum(unicode_code)
 
         self.assertIsNotNone(get_snippet_by_checksum(self.session, checksum_large))
-        self.assertIsNotNone(
-            get_snippet_by_checksum(self.session, checksum_unicode)
-        )
+        self.assertIsNotNone(get_snippet_by_checksum(self.session, checksum_unicode))
 
 
 if __name__ == "__main__":

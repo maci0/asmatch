@@ -31,6 +31,7 @@ from .database import create_db_and_tables, engine
 class CLIError(Exception):
     """Custom exception for CLI-related errors."""
 
+
 logger = logging.getLogger(__name__)
 
 
