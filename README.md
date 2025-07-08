@@ -116,7 +116,7 @@ poetry install
 poetry shell
 
 # 3. (Recommended for developers) Install pre-commit hooks
-pre-commit install
+poetry run pre-commit install
 ```
 
 This will create a virtual environment, install all necessary dependencies, and set up the pre-commit hooks to automatically check your code on every commit.
@@ -217,14 +217,18 @@ For detailed guidelines on contributing to this project, please see our [Contrib
 
 ### Generating Test Data
 
-The `tests/generate_data.py` script can be used to create a large number of randomized assembly files for performance testing and validation.
+The `tests/generate_data.py` script can be used to create a large number of randomized assembly files for performance testing and validation. By default, it generates 1,000 files in a `data/` directory, but this can be configured.
 
 **Usage:**
 ```bash
+# Generate 1000 files in the default 'data/' directory
 poetry run python tests/generate_data.py
+
+# Generate 500 files in a custom directory
+poetry run python tests/generate_data.py --num-files 500 --data-dir custom_data/
 ```
 
-This will generate 1000 new `.asm` files in the `data/` directory. You can then import them into `asmatch` using the `import` command:
+You can then import the generated files into `asmatch` using the `import` command:
 ```bash
 poetry run asmatch import data/
 ```
