@@ -47,14 +47,20 @@ class TestBenchmarkScript(unittest.TestCase):
         )
 
         # Check that the script executed successfully
-        self.assertEqual(result.returncode, 0, f"Benchmark script failed with error: {result.stderr}")
+        self.assertEqual(
+            result.returncode, 0, f"Benchmark script failed with error: {result.stderr}"
+        )
         self.assertIn("--- Benchmarking 'import'", result.stdout)
         self.assertIn("--- Benchmarking 'find'", result.stdout)
         self.assertIn("Cleanup complete", result.stdout)
 
         # Assert that the script cleaned up after itself
-        self.assertFalse(os.path.exists(self.db_name), "Benchmark database was not cleaned up.")
-        self.assertFalse(os.path.exists(DATA_DIR), "Generated data directory was not cleaned up.")
+        self.assertFalse(
+            os.path.exists(self.db_name), "Benchmark database was not cleaned up."
+        )
+        self.assertFalse(
+            os.path.exists(DATA_DIR), "Generated data directory was not cleaned up."
+        )
 
 
 if __name__ == "__main__":
