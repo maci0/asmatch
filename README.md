@@ -44,6 +44,30 @@ The LSH step gives us a small list of candidates, but it's not perfectly accurat
 
 - **Ranking:** The candidates are then ranked by their similarity score, and the top results are presented to the user.
 
+### Algorithm Details
+
+#### How MinHash Works
+
+The MinHash algorithm is a technique for quickly estimating how similar two sets are. In our case, the "sets" are the normalized assembly code snippets. Here’s a step-by-step breakdown of how it works:
+
+1.  **Shingling:** The normalized code is first broken down into a set of overlapping "shingles" (or n-grams). For example, a 3-shingle of the tokens `['MOV', 'REG', 'IMM']` would be `('MOV', 'REG', 'IMM')`. This creates a set of all unique shingles in the snippet.
+
+2.  **Hashing:** Each unique shingle is then hashed to an integer. This converts the set of shingles into a set of numbers.
+
+3.  **Min-Hashing:** A fixed number of different hash functions (in our case, 128, as defined by `num_permutations`) are applied to each number in the set of hashed shingles. For each hash function, we only keep the *minimum* hash value produced across all shingles.
+
+4.  **Signature:** The collection of these 128 minimum hash values becomes the "MinHash signature" for the snippet.
+
+The key insight is that the similarity of two MinHash signatures is a good estimate of the Jaccard similarity of the original shingle sets. This allows us to compare fingerprints instead of the full code, which is significantly faster.
+
+#### The RapidFuzz Algorithm
+
+After the LSH index provides a list of potential candidates, `asmatch` uses the `rapidfuzz` library to perform a more precise similarity calculation. `rapidfuzz` is a high-performance library that implements a variety of string similarity algorithms in C++.
+
+The primary algorithm used is a variation of the **Levenshtein distance**, which measures the number of edits (insertions, deletions, or substitutions) needed to change one string into another. `rapidfuzz` calculates a normalized similarity ratio based on this distance, which gives a score from 0 to 100, where 100 is a perfect match.
+
+By using `rapidfuzz`, `asmatch` can accurately score the similarity between the query and candidate snippets, ensuring that the final results are ranked by their true similarity, not just the approximation from the LSH step.
+
 ### Lookup Flow
 
 When you run `asmatch find`, the tool processes your query in several stages:
@@ -70,7 +94,7 @@ asmatch/
 │       ├── database.py
 │       └── models.py
 ├── docs/
-���   └── user_stories.md
+|   └── user_stories.md
 ├── tests/
 ├── .gitignore
 ├── AGENTS.md
@@ -82,11 +106,22 @@ asmatch/
 
 ### 1. Installation
 
-It is recommended to install the package in editable mode. This allows you to run the CLI from the command line and ensures that any changes you make to the source code are immediately available.
+This project is managed with [Poetry](https://python-poetry.org/). First, install Poetry if you haven't already. Then, from the root of the project, run:
 
 ```bash
-pip install -e .
+# 1. Install dependencies
+poetry install
+
+# 2. Activate the virtual environment
+poetry shell
+
+# 3. (Recommended for developers) Install pre-commit hooks
+pre-commit install
 ```
+
+This will create a virtual environment, install all necessary dependencies, and set up the pre-commit hooks to automatically check your code on every commit.
+
+
 
 ### 2. Configuration
 
@@ -109,43 +144,15 @@ You can manage this file with the `asmatch config` command.
 
 ### 3. Usage
 
-The CLI can be invoked directly with `asmatch` or by running `python -m asmatch`.
-It provides a streamlined, action-oriented interface.
+The CLI can be invoked through Poetry or by running the module directly after activating the shell.
 
 **Examples:**
 ```bash
-# Add a new snippet
-asmatch add my_memcpy "MOV EAX, EBX; ..."
+# Run commands through poetry
+poetry run asmatch add my_memcpy "MOV EAX, EBX; ..."
 
-# Add a new name to an existing snippet
-asmatch name add <checksum> my_memcpy_alias
-
-# Remove a name from a snippet
-asmatch name remove <checksum> my_memcpy_alias
-
-# Bulk-import from a directory
-asmatch import /path/to/my/snippets/
-
-# Export all snippets to a directory
-asmatch export /path/to/my/backups/
-
-# List all snippets
-asmatch list
-
-# Show details for a specific snippet
-asmatch show <checksum>
-
-# Find similar snippets
+# Or, after running `poetry shell`, you can call it directly
 asmatch find --query "MOV EAX"
-
-# Compare two snippets by their checksums
-asmatch compare <checksum1> <checksum2>
-
-# Delete a snippet by its checksum
-asmatch rm <checksum>
-
-# Clean the cache and optimize the database
-asmatch clean
 ```
 
 Global options:
@@ -157,9 +164,7 @@ Global options:
 
 For a detailed breakdown of all commands and features, see the [User Stories](./docs/user_stories.md) or run:
 ```bash
-asmatch --help
-# or
-python -m asmatch --help
+poetry run asmatch --help
 ```
 
 ### 4. Example with test_data
@@ -168,29 +173,47 @@ This is an example of how to import the provided `test_data` and then search for
 
 ```bash
 # import the data
-asmatch import tests/test_data
+poetry run asmatch import tests/test_data
 ```
 
 ```bash
 # search for a snippet
-asmatch find --threshold 0.2 --query "push esi; mov esi, dword [esp+0CH]; push edi"
+poetry run asmatch find --threshold 0.2 --query "push esi; mov esi, dword [esp+0CH]; push edi"
 ```
 
 ```bash
 # search for a function
-asmatch find --file tests/test_data/1000A0A0.asm 
+poetry run asmatch find --file tests/test_data/1000A0A0.asm
 ```
 
 ### 5. Running Tests
 
-To ensure everything is working correctly, you can run the test suite:
+To ensure everything is working correctly, you can run the test suite using Poetry:
 ```bash
-python -m unittest discover tests
+poetry run pytest
 ```
+
+## Benchmarking
+
+A simple benchmarking script is included to measure the performance of the `import` and `find` commands.
+
+To run the benchmark, execute the following command from the root of the project:
+
+```bash
+poetry run python tests/benchmark.py
+```
+
+The script will:
+1.  Generate 1,000 new assembly files in a `data/` directory.
+2.  Measure the time it takes to import all of these files.
+3.  Measure the time it takes to run a `find` query against the newly created database.
+4.  Clean up the generated files and the benchmark database.
+
+This provides a quick way to assess the performance of the core functionality on a non-trivial dataset.
 
 ## Development
 
-For guidelines on contributing to this project, especially when using AI agents, please see [AGENTS.md](./AGENTS.md).
+For detailed guidelines on contributing to this project, please see our [Contributor Guide](./AGENTS.md).
 
 ### Generating Test Data
 
@@ -198,12 +221,12 @@ The `tests/generate_data.py` script can be used to create a large number of rand
 
 **Usage:**
 ```bash
-python tests/generate_data.py
+poetry run python tests/generate_data.py
 ```
 
 This will generate 1000 new `.asm` files in the `data/` directory. You can then import them into `asmatch` using the `import` command:
 ```bash
-asmatch import data/
+poetry run asmatch import data/
 ```
 
 ## Visual Flowcharts

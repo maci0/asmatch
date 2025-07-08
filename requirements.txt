@@ -1,9 +1,0 @@
-sqlmodel
-pygments
-datasketch
-rapidfuzz
-tomli
-tomli_w
-setuptools
-pytest
-mypy

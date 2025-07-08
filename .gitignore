@@ -22,3 +22,12 @@ dist/
 data/
 
 .gemini
+
+# Testing
+.pytest_cache/
+.coverage
+
+# Type hinting
+.mypy_cache/
+
+poetry.lock
