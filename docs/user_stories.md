@@ -34,6 +34,19 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 
 ---
 
+### Title: Manage snippet names
+
+**As a** database maintainer,
+**I want to** use the `name` command to manage the names associated with a snippet,
+**so that I can** keep the database organized and up-to-date.
+
+**Acceptance Criteria:**
+- `asmatch name add <checksum> <new_name>` adds a new name to an existing snippet.
+- `asmatch name remove <checksum> <name_to_remove>` removes a name from a snippet.
+- The tool prevents removing the last name from a snippet.
+
+---
+
 ### Title: Bulk-import a directory of code snippets
 
 **As a** malware analyst,
@@ -73,6 +86,7 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 - `asmatch compare <checksum1> <checksum2>` displays a side-by-side comparison.
 - The comparison includes Jaccard similarity, Levenshtein score, and shared token count.
 - The output is color-coded for readability.
+- The user can disable colored output with the `--no-color` flag.
 - The output can be formatted as JSON with `--json`.
 
 ---
@@ -89,15 +103,14 @@ This document outlines the features of the `asmatch` CLI from a user's perspecti
 
 ---
 
-### Title: Remove a snippet name or alias
+### Title: Remove a snippet
 
 **As a** database maintainer,
-**I want to** use the `rm` (or `del`) command to remove an obsolete or incorrect name,
+**I want to** use the `rm` (or `del`) command to remove an obsolete or incorrect snippet,
 **so that** the search results remain clean and accurate.
 
 **Acceptance Criteria:**
-- `asmatch rm <name>` removes a name from a snippet.
-- If it is the last name associated with the code, the entire snippet is deleted.
+- `asmatch rm <checksum>` removes a snippet from the database.
 - The tool prompts for confirmation before deleting.
 
 ---
