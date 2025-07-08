@@ -70,7 +70,7 @@ asmatch/
 │       ├── database.py
 │       └── models.py
 ├── docs/
-│   └── user_stories.md
+���   └── user_stories.md
 ├── tests/
 ├── .gitignore
 ├── AGENTS.md
@@ -114,8 +114,14 @@ It provides a streamlined, action-oriented interface.
 
 **Examples:**
 ```bash
-# Add a new snippet or an alias
+# Add a new snippet
 asmatch add my_memcpy "MOV EAX, EBX; ..."
+
+# Add a new name to an existing snippet
+asmatch name add <checksum> my_memcpy_alias
+
+# Remove a name from a snippet
+asmatch name remove <checksum> my_memcpy_alias
 
 # Bulk-import from a directory
 asmatch import /path/to/my/snippets/
@@ -135,14 +141,18 @@ asmatch find --query "MOV EAX"
 # Compare two snippets by their checksums
 asmatch compare <checksum1> <checksum2>
 
+# Delete a snippet by its checksum
+asmatch rm <checksum>
+
 # Clean the cache and optimize the database
 asmatch clean
 ```
 
 Global options:
 ```
---quiet   Suppress informational output
---verbose Increase output verbosity
+--quiet      Suppress informational output
+--verbose    Increase output verbosity
+--no-color   Disable colored output
 ```
 
 For a detailed breakdown of all commands and features, see the [User Stories](./docs/user_stories.md) or run:
