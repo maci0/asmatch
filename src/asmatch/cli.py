@@ -184,7 +184,6 @@ def cmd_show(args: argparse.Namespace, session: Session, _config: dict) -> None:
         logger.info("Code:\n%s", snippet.code)
 
 
-
 def cmd_rm(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``rm`` command."""
     if confirm_action(
@@ -327,10 +326,14 @@ def cmd_compare(args: argparse.Namespace, session: Session, _config: dict) -> No
 
         logger.info("--- Snippet Comparison ---")
         logger.info(
-            format_output("Snippet 1: ", f"{s1['names']} ({s1['checksum'][:12]}...)", "1")
+            format_output(
+                "Snippet 1: ", f"{s1['names']} ({s1['checksum'][:12]}...)", "1"
+            )
         )
         logger.info(
-            format_output("Snippet 2: ", f"{s2['names']} ({s2['checksum'][:12]}...)", "1")
+            format_output(
+                "Snippet 2: ", f"{s2['names']} ({s2['checksum'][:12]}...)", "1"
+            )
         )
 
         logger.info("\n--- Similarity Metrics ---")
@@ -355,7 +358,6 @@ def cmd_compare(args: argparse.Namespace, session: Session, _config: dict) -> No
                 "94",
             )
         )
-
 
 
 def cmd_clean(args: argparse.Namespace, session: Session, _config: dict) -> None:
