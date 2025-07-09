@@ -42,6 +42,18 @@ To avoid the slow process of comparing a query against every single entry in the
 
 - **Locality Sensitive Hashing (LSH):** We use a `MinHashLSH` index to store all the MinHashes. This data structure acts like a "bucketing" system. Similar MinHashes are likely to be placed into the same buckets. When you search, we hash your query's MinHash and only retrieve candidates from the buckets it lands in. This is an extremely fast way to narrow down a huge database to a handful of potential matches.
 
+The key idea behind LSH is to hash items so that similar items have a higher probability of ending up in the same "bucket." The banding technique is a method for amplifying this effect, making the process more efficient and reliable for finding collision candidates.
+
+Here’s how it works:
+
+1.  **Divide the Signature:** The MinHash signature (a list of 128 hash values) is divided into several smaller "bands." For example, if we have 128 hashes and we create 32 bands, each band would contain 4 hashes.
+
+2.  **Hash Each Band:** Each band is then hashed separately. If two snippets have a band that is identical (meaning all hash values within that band are the same), they will produce the same hash for that band and be considered candidates for a match.
+
+3.  **Candidate Pairs:** Two snippets are considered a candidate pair if they are identical in at least one band.
+
+This technique is effective because it balances the trade-off between false positives and false negatives. By requiring an entire band to match, we reduce the chance of accidental collisions (false positives). At the same time, by allowing a match in *any* of the bands, we increase the chance of finding truly similar items, even if their MinHash signatures are not identical (avoiding false negatives). This makes the LSH process both fast and effective at finding likely matches in a very large dataset.
+
 ### 2. Accurate Ranking with RapidFuzz
 
 The LSH step gives us a small list of candidates, but it's not perfectly accurate. The second step is to precisely rank these candidates.
