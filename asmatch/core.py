@@ -26,6 +26,86 @@ LSH_THRESHOLD = 0.5
 # Initialize the Lexer once
 lexer = NasmLexer()
 
+# A set of common register names to assist the lexer
+REGISTERS = {
+    "ah",
+    "al",
+    "ax",
+    "bh",
+    "bl",
+    "bp",
+    "bx",
+    "ch",
+    "cl",
+    "cr0",
+    "cr2",
+    "cr3",
+    "cr4",
+    "cs",
+    "cx",
+    "dh",
+    "di",
+    "dl",
+    "dr0",
+    "dr1",
+    "dr2",
+    "dr3",
+    "dr6",
+    "dr7",
+    "ds",
+    "dx",
+    "eax",
+    "ebp",
+    "ebx",
+    "ecx",
+    "edi",
+    "edx",
+    "eflags",
+    "eip",
+    "es",
+    "esi",
+    "esp",
+    "fs",
+    "gs",
+    "rax",
+    "rbp",
+    "rbx",
+    "rcx",
+    "rdi",
+    "rdx",
+    "rip",
+    "rsi",
+    "rsp",
+    "si",
+    "sp",
+    "ss",
+    "st0",
+    "st1",
+    "st2",
+    "st3",
+    "st4",
+    "st5",
+    "st6",
+    "st7",
+    "xmm0",
+    "xmm1",
+    "xmm2",
+    "xmm3",
+    "xmm4",
+    "xmm5",
+    "xmm6",
+    "xmm7",
+    "ymm0",
+    "ymm1",
+    "ymm2",
+    "ymm3",
+    "ymm4",
+    "ymm5",
+    "ymm6",
+    "ymm7",
+}
+
+
 # --- Core Processing Functions ---
 
 
@@ -111,7 +191,7 @@ def get_tokens(code_snippet: str, normalize: bool = True) -> list[str]:
             continue
 
         if normalize:
-            if ttype in Name.Register:
+            if ttype in Name.Register or value.lower() in REGISTERS:
                 output_tokens.append("REG")
             elif ttype in Number:
                 output_tokens.append("IMM")
