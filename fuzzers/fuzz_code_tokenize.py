@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=import-error
 """A fuzzer for the get_tokens function."""
 
 import sys
