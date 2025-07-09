@@ -100,6 +100,18 @@ The asmatch project follows a test-driven approach to ensure quality and correct
     ```
     This command will run the test suite and then print a report to the console, showing the percentage of code covered by tests for each file. Aim to maintain or increase the coverage percentage with your contributions.
 
+- **Running Fuzzers:** This project uses fuzz testing to find bugs and crashes in core, security-sensitive functions. The fuzzers are located in the `fuzzers/` directory and are built on the `atheris` engine. You can run them locally to test for issues.
+
+    To run a specific fuzzer, execute its script directly. For example, to run the fuzzer for the `get_tokens` function:
+    ```bash
+    poetry run ./fuzzers/fuzz_get_tokens.py
+    ```
+    The fuzzer will run indefinitely until you stop it manually (with `Ctrl+C`) or until it finds a crash. To run it for a fixed duration, use the `-max_total_time` flag:
+    ```bash
+    poetry run ./fuzzers/fuzz_get_tokens.py -max_total_time=60
+    ```
+    If a crash is found, the fuzzer will stop and create a `crash-<hash>` file in the root directory containing the input that caused the failure. This file is crucial for debugging and should be included in any bug report.
+
 - **Code Style and Quality:** As configured during setup, our pre-commit hooks will automatically run `black` for formatting, `ruff` for linting, and `mypy` for static type checking before each commit. You do not need to run these tools manually. If a hook fails, the commit will be aborted, and you will see an error message indicating what needs to be fixed. Simply correct the issue and attempt the commit again.  
 
 ### Commit Your Changes
