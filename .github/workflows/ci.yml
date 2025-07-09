@@ -19,6 +19,6 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: Run mypy
-        run: poetry run mypy src
+        run: poetry run mypy asmatch
       - name: Run tests
         run: poetry run pytest -q

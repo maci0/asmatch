@@ -25,7 +25,7 @@ jobs:
         run: poetry install
 
       - name: Run mypy
-        run: poetry run mypy src/asmatch
+        run: poetry run mypy asmatch
 
       - name: Run ruff
         run: poetry run ruff check .
