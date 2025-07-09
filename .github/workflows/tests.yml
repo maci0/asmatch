@@ -38,3 +38,37 @@ jobs:
 
       - name: Run pytest
         run: poetry run pytest -v
+
+  fuzz:
+    name: Fuzzing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Build Fuzzers
+        id: build
+        uses: google/clusterfuzzlite/actions/build_fuzzers@v1
+        with:
+          language: python
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Fuzzers
+        uses: google/clusterfuzzlite/actions/run_fuzzers@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: 600
+          mode: 'code-change'
