@@ -97,6 +97,11 @@ def get_checksum(code_snippet: str) -> str:
     return hashlib.sha256(normalized_string.encode("utf-8")).hexdigest()
 
 
+def is_label(token_type, value: str) -> bool:
+    """Check if a token is a label."""
+    return token_type in Name.Label or (token_type in Name and value.endswith(":"))
+
+
 def get_tokens(code_snippet: str, normalize: bool = True) -> list[str]:
     """Return a list of tokens from a code snippet."""
     tokens = lexer.get_tokens(code_snippet)
@@ -110,6 +115,16 @@ def get_tokens(code_snippet: str, normalize: bool = True) -> list[str]:
                 output_tokens.append("REG")
             elif ttype in Number:
                 output_tokens.append("IMM")
+            elif is_label(ttype, value):
+                output_tokens.append("LABEL")
+            elif value.lower() in [
+                "dword",
+                "word",
+                "byte",
+                "qword",
+                "dword ptr",
+            ]:
+                output_tokens.append("MEM_SIZE")
             elif ttype not in Punctuation and value.strip():
                 output_tokens.append(value.upper())
         else:

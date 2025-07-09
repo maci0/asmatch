@@ -38,6 +38,31 @@ To avoid the slow process of comparing a query against every single entry in the
 
 - **Normalization:** The assembly code is first "normalized" by a lexer. This process simplifies the code to its core structure, for example by replacing all register names (e.g., `EAX`, `EBX`) with a generic `REG` token and all immediate values with `IMM`. This makes the comparison robust against simple register or value changes. This behavior can be disabled with the `--no-normalization` flag on the `find` command.
 
+- **Normalization Details:** The normalization process is designed to create a canonical representation of the assembly code, focusing on the structural logic rather than specific register choices or immediate values. Here’s what it does:
+    - **Generalizes Registers:** All general-purpose registers (e.g., `EAX`, `RBX`, `RDI`) are replaced with the generic token `REG`.
+    - **Generalizes Immediate Values:** All numerical values (e.g., `0x10`, `42`) are replaced with the token `IMM`.
+    - **Generalizes Labels:** All labels (e.g., `loc_123:`, `?_0001:`) are replaced with the token `LABEL`.
+    - **Normalizes Memory Operands:** Memory size indicators like `dword ptr`, `byte`, etc., are replaced with `MEM_SIZE`.
+    - **Removes Comments:** All comments are stripped out.
+    - **Standardizes Formatting:** All tokens are converted to uppercase, and whitespace is normalized.
+
+    **Example:**
+
+    **Before Normalization:**
+    ```asm
+    ; ---- 10001000 ----
+    ?_0001: ; Local function
+            push    esi
+            mov     esi, dword [esp+0CH]
+            push    edi
+            mov     edi, dword [esp+0CH]
+    ```
+
+    **After Normalization:**
+    ```
+    LABEL PUSH REG MOV REG MEM_SIZE [ REG + IMM ] PUSH REG MOV REG MEM_SIZE [ REG + IMM ]
+    ```
+
 - **MinHash:** Each normalized snippet is converted into a **MinHash**. A MinHash is a compact "fingerprint" of the code. Snippets with similar structures will produce similar MinHash fingerprints.
 
 - **Locality Sensitive Hashing (LSH):** We use a `MinHashLSH` index to store all the MinHashes. This data structure acts like a "bucketing" system. Similar MinHashes are likely to be placed into the same buckets. When you search, we hash your query's MinHash and only retrieve candidates from the buckets it lands in. This is an extremely fast way to narrow down a huge database to a handful of potential matches.
