@@ -109,7 +109,7 @@ REGISTERS = {
 # --- Core Processing Functions ---
 
 
-def get_normalized_string(code_snippet: str) -> str:
+def string_normalize(code_snippet: str) -> str:
     """Normalize an assembly snippet and return a canonical string."""
     tokens = lexer.get_tokens(code_snippet)
     # Join tokens, but only if they are not comments or pure whitespace
@@ -171,18 +171,18 @@ def snippet_name_remove(
     return snippet
 
 
-def get_checksum(code_snippet: str) -> str:
+def string_checksum(code_snippet: str) -> str:
     """Calculate the SHA256 checksum of a normalized code snippet."""
-    normalized_string = get_normalized_string(code_snippet)
+    normalized_string = string_normalize(code_snippet)
     return hashlib.sha256(normalized_string.encode("utf-8")).hexdigest()
 
 
-def is_label(token_type, value: str) -> bool:
+def token_is_label(token_type, value: str) -> bool:
     """Check if a token is a label."""
     return token_type in Name.Label or (token_type in Name and value.endswith(":"))
 
 
-def get_tokens(code_snippet: str, normalize: bool = True) -> list[str]:
+def code_tokenize(code_snippet: str, normalize: bool = True) -> list[str]:
     """Return a list of tokens from a code snippet."""
     tokens = lexer.get_tokens(code_snippet)
     output_tokens = []
@@ -195,7 +195,7 @@ def get_tokens(code_snippet: str, normalize: bool = True) -> list[str]:
                 output_tokens.append("REG")
             elif ttype in Number:
                 output_tokens.append("IMM")
-            elif is_label(ttype, value):
+            elif token_is_label(ttype, value):
                 output_tokens.append("LABEL")
             elif value.lower() in [
                 "dword",
@@ -214,9 +214,9 @@ def get_tokens(code_snippet: str, normalize: bool = True) -> list[str]:
     return output_tokens
 
 
-def code_to_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
+def code_create_minhash(code_snippet: str, normalize: bool = True) -> MinHash:
     """Return a MinHash object representing the given code snippet."""
-    tokens = get_tokens(code_snippet, normalize)
+    tokens = code_tokenize(code_snippet, normalize)
     m = MinHash(num_perm=NUM_PERMUTATIONS)
     if not tokens:
         return m
@@ -232,7 +232,7 @@ def snippet_add(session: Session, name: str, code: str):
     """Add a new snippet or alias to the database."""
     if not code.strip():
         return None
-    checksum = get_checksum(code)
+    checksum = string_checksum(code)
 
     existing_snippet = Snippet.get_by_checksum(session, checksum)
 
@@ -249,7 +249,7 @@ def snippet_add(session: Session, name: str, code: str):
         return existing_snippet
 
     # Snippet with this code does not exist, create a new one
-    minhash_obj = code_to_minhash(code)
+    minhash_obj = code_create_minhash(code)
     minhash_bytes = pickle.dumps(minhash_obj)
 
     new_snippet = Snippet(
@@ -285,7 +285,7 @@ def snippet_find_matches(
     if lsh is None:
         return 0, []  # Error handled in build_lsh_index
 
-    query_minhash = code_to_minhash(query_string, normalize)
+    query_minhash = code_create_minhash(query_string, normalize)
     candidate_keys = lsh.query(query_minhash)
 
     if not candidate_keys:
@@ -339,7 +339,7 @@ def db_reindex(session: Session):
         return {"num_reindexed": 0, "time_elapsed": 0, "avg_time_per_snippet": 0}
 
     for snippet in snippets:
-        minhash_obj = code_to_minhash(snippet.code)
+        minhash_obj = code_create_minhash(snippet.code)
         snippet.minhash = pickle.dumps(minhash_obj)
         session.add(snippet)
 
@@ -375,8 +375,8 @@ def snippet_compare(session: Session, checksum1: str, checksum2: str) -> dict | 
 
     levenshtein_score = fuzz.ratio(snippet1.code, snippet2.code)
 
-    tokens1 = set(get_tokens(snippet1.code, normalize=True))
-    tokens2 = set(get_tokens(snippet2.code, normalize=True))
+    tokens1 = set(code_tokenize(snippet1.code, normalize=True))
+    tokens2 = set(code_tokenize(snippet2.code, normalize=True))
     shared_tokens = len(tokens1.intersection(tokens2))
 
     return {
@@ -398,7 +398,7 @@ def snippet_compare(session: Session, checksum1: str, checksum2: str) -> dict | 
     }
 
 
-def get_average_similarity(session: Session, sample_size: int = 100) -> float:
+def db_calculate_average_similarity(session: Session, sample_size: int = 100) -> float:
     """Estimate average Jaccard similarity from a random sample."""
     snippets = Snippet.get_all(session)
     if len(snippets) < 2:
@@ -435,13 +435,13 @@ def db_stats(session: Session):
 
     all_tokens = set()
     for s in snippets:
-        all_tokens.update(get_tokens(s.code))
+        all_tokens.update(code_tokenize(s.code))
 
     return {
         "num_snippets": len(snippets),
         "avg_snippet_size": total_size / len(snippets),
         "vocabulary_size": len(all_tokens),
-        "avg_jaccard_similarity": get_average_similarity(session),
+        "avg_jaccard_similarity": db_calculate_average_similarity(session),
     }
 
 

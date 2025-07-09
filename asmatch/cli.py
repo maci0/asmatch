@@ -83,6 +83,9 @@ def cmd_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
                 snippet.checksum,
                 snippet.name_list,
             )
+    elif args.json:
+        if not args.quiet:
+            logger.info(json.dumps({"error": "Failed to add snippet."}, indent=2))
 
 
 def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> None:
@@ -417,32 +420,44 @@ def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
 def cmd_name_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``name add`` command."""
     snippet = snippet_name_add(session, args.checksum, args.name, quiet=args.quiet)
-    if snippet and args.json:
+    if snippet:
+        if args.json:
+            if not args.quiet:
+                logger.info(
+                    json.dumps(
+                        {
+                            "checksum": snippet.checksum,
+                            "names": snippet.name_list,
+                        },
+                        indent=2,
+                    )
+                )
+    elif args.json:
         if not args.quiet:
             logger.info(
-                json.dumps(
-                    {
-                        "checksum": snippet.checksum,
-                        "names": snippet.name_list,
-                    },
-                    indent=2,
-                )
+                json.dumps({"error": "Failed to add name to snippet."}, indent=2)
             )
 
 
 def cmd_name_remove(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``name remove`` command."""
     snippet = snippet_name_remove(session, args.checksum, args.name, quiet=args.quiet)
-    if snippet and args.json:
+    if snippet:
+        if args.json:
+            if not args.quiet:
+                logger.info(
+                    json.dumps(
+                        {
+                            "checksum": snippet.checksum,
+                            "names": snippet.name_list,
+                        },
+                        indent=2,
+                    )
+                )
+    elif args.json:
         if not args.quiet:
             logger.info(
-                json.dumps(
-                    {
-                        "checksum": snippet.checksum,
-                        "names": snippet.name_list,
-                    },
-                    indent=2,
-                )
+                json.dumps({"error": "Failed to remove name from snippet."}, indent=2)
             )
 
 

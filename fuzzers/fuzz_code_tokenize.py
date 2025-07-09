@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=duplicate-code
-"""A fuzzer for the get_normalized_string function."""
+"""A fuzzer for the get_tokens function."""
 
 import sys
 
@@ -9,7 +8,7 @@ import atheris
 # This is needed to allow the fuzzer to import the target module
 # and any dependencies it has.
 with atheris.instrument_imports():
-    from asmatch.core import get_normalized_string
+    from asmatch.core import code_tokenize
 
 
 def test_one_input(data):
@@ -21,7 +20,7 @@ def test_one_input(data):
         string_data = fdp.ConsumeUnicode(fdp.remaining_bytes())
 
         # Call the target function
-        get_normalized_string(string_data)
+        code_tokenize(string_data)
     except UnicodeDecodeError:
         # This is an expected exception when the input is not valid UTF-8.
         # We can ignore it and let the fuzzer continue.

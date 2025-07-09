@@ -7,13 +7,12 @@ import unittest
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from asmatch.core import (
-    code_to_minhash,
+    code_create_minhash,
+    code_tokenize,
+    db_calculate_average_similarity,
     db_clean,
     db_reindex,
     db_stats,
-    get_average_similarity,
-    get_checksum,
-    get_tokens,
     snippet_add,
     snippet_compare,
     snippet_delete,
@@ -23,6 +22,7 @@ from asmatch.core import (
     snippet_list,
     snippet_name_add,
     snippet_name_remove,
+    string_checksum,
 )
 from asmatch.models import Snippet
 
@@ -48,7 +48,7 @@ class TestAsmatch(unittest.TestCase):
         """Test adding a snippet and retrieving it by its checksum."""
         name = "test_snippet"
         code = "MOV EAX, 1"
-        checksum = get_checksum(code)
+        checksum = string_checksum(code)
 
         snippet_add(self.session, name, code)
 
@@ -77,8 +77,8 @@ class TestAsmatch(unittest.TestCase):
         """Test the normalization function."""
         code1 = "MOV EAX, [ESP+4] ; load first argument"
         code2 = "mov eax, [esp+4]"
-        minhash1 = code_to_minhash(code1)
-        minhash2 = code_to_minhash(code2)
+        minhash1 = code_create_minhash(code1)
+        minhash2 = code_create_minhash(code2)
         self.assertGreater(minhash1.jaccard(minhash2), 0.99)
 
     def test_find_matches(self):
@@ -91,14 +91,14 @@ class TestAsmatch(unittest.TestCase):
             test al, al
             jnz string_copy
         """
-        snippet1_checksum = get_checksum(snippet1_code)
+        snippet1_checksum = string_checksum(snippet1_code)
         snippet_add(self.session, snippet1_name, snippet1_code)
 
         snippet2_name = "sum_array"
         snippet2_code = """
         sum_loop:
             add eax, [esi]
-            add esi, 4
+            esi, 4
             dec ecx
             jnz sum_loop
         """
@@ -125,8 +125,8 @@ class TestAsmatch(unittest.TestCase):
         snippet_add(self.session, "big", large_code)
         snippet_add(self.session, "unicode", unicode_code)
 
-        checksum_large = get_checksum(large_code)
-        checksum_unicode = get_checksum(unicode_code)
+        checksum_large = string_checksum(large_code)
+        checksum_unicode = string_checksum(unicode_code)
 
         self.assertIsNotNone(snippet_get(self.session, checksum_large))
         self.assertIsNotNone(snippet_get(self.session, checksum_unicode))
@@ -147,7 +147,7 @@ class TestAsmatch(unittest.TestCase):
         """Test that adding an empty snippet does nothing."""
         result = snippet_add(self.session, "empty", "")
         self.assertIsNone(result)
-        self.assertIsNone(snippet_get(self.session, get_checksum("")))
+        self.assertIsNone(snippet_get(self.session, string_checksum("")))
 
     def test_get_by_name_not_found(self):
         """Test getting a snippet by a name that does not exist."""
@@ -156,7 +156,7 @@ class TestAsmatch(unittest.TestCase):
 
     def test_get_tokens_no_normalize(self):
         """Test getting tokens without normalization."""
-        tokens = get_tokens("mov eax, 1", normalize=False)
+        tokens = code_tokenize("mov eax, 1", normalize=False)
         self.assertEqual(tokens, ["MOV", "EAX", "1"])
 
     def test_find_matches_no_candidates(self):
@@ -277,7 +277,7 @@ class TestSnippetCoreFunctions(unittest.TestCase):
         """Test getting the average similarity."""
         snippet_add(self.session, "s1", "MOV EAX, 1")
         snippet_add(self.session, "s2", "MOV EAX, 2")
-        similarity = get_average_similarity(self.session)
+        similarity = db_calculate_average_similarity(self.session)
         self.assertIsInstance(similarity, float)
 
     def test_snippet_name_add_nonexistent_snippet(self):
@@ -325,7 +325,7 @@ class TestSnippetCoreFunctions(unittest.TestCase):
 
     def test_get_average_similarity_empty_db(self):
         """Test getting average similarity for an empty database."""
-        similarity = get_average_similarity(self.session)
+        similarity = db_calculate_average_similarity(self.session)
         self.assertEqual(similarity, 1.0)
 
     def test_snippet_name_add_quiet(self):

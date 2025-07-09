@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=duplicate-code
-"""A fuzzer for the code_to_minhash function."""
+"""A fuzzer for the get_checksum function."""
 
 import sys
 
@@ -9,7 +9,7 @@ import atheris
 # This is needed to allow the fuzzer to import the target module
 # and any dependencies it has.
 with atheris.instrument_imports():
-    from asmatch.core import code_to_minhash
+    from asmatch.core import string_checksum
 
 
 def test_one_input(data):
@@ -20,9 +20,8 @@ def test_one_input(data):
         fdp = atheris.FuzzedDataProvider(data)
         string_data = fdp.ConsumeUnicode(fdp.remaining_bytes())
 
-        # Call the target function with both normalization options
-        code_to_minhash(string_data, normalize=True)
-        code_to_minhash(string_data, normalize=False)
+        # Call the target function
+        string_checksum(string_data)
     except UnicodeDecodeError:
         # This is an expected exception when the input is not valid UTF-8.
         # We can ignore it and let the fuzzer continue.
