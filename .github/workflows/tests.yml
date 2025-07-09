@@ -65,6 +65,10 @@ jobs:
         with:
           language: python
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          storage-repo: ${{ secrets.GCS_BUCKET }}
+          upload-build: ${{ github.ref == 'refs/heads/main' }}
+          sarif-report: true
+          bad-build-check: false
 
       - name: Run Fuzzers
         uses: google/clusterfuzzlite/actions/run_fuzzers@v1
