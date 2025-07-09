@@ -35,7 +35,7 @@ class BaseCLITest(unittest.TestCase):
         """Helper function to run a command and return the output."""
         env = {
             **os.environ,
-            "PYTHONPATH": os.path.join(os.getcwd(), "src"),
+            "PYTHONPATH": os.path.join(os.getcwd(), "."),
             "DATABASE_URL": f"sqlite:///{self.db_name}",
         }
         if extra_env:

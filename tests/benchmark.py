@@ -27,7 +27,7 @@ def run_command(command, extra_env=None):
     """Helper function to run a command and return the elapsed time."""
     env = {
         **os.environ,
-        "PYTHONPATH": os.path.join(os.getcwd(), "src"),
+        "PYTHONPATH": os.path.join(os.getcwd(), "."),
     }
     if extra_env:
         env.update(extra_env)

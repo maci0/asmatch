@@ -31,4 +31,4 @@ repos:
         entry: poetry run pylint
         language: system
         types: [python]
-        args: ["src/asmatch/", "tests/"]
+        args: ["asmatch/", "tests/"]

@@ -7,7 +7,7 @@ license = "GPLv3"
 homepage = "https://github.com/maci0/asmatch"
 repository = "https://github.com/maci0/asmatch"
 readme = "README.md"
-packages = [{include = "asmatch", from = "src"}]
+packages = [{include = "asmatch", from = "."}]
 
 [tool.poetry.dependencies]
 python = "^3.11"

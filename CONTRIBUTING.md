@@ -96,7 +96,7 @@ The asmatch project follows a test-driven approach to ensure quality and correct
 
 - **Check Test Coverage:** To ensure that your changes are well-tested, you can generate a test coverage report. This project uses `pytest-cov` to measure how much of the codebase is exercised by the tests.
     ```bash
-    poetry run pytest --cov=src/asmatch
+    poetry run pytest --cov=asmatch
     ```
     This command will run the test suite and then print a report to the console, showing the percentage of code covered by tests for each file. Aim to maintain or increase the coverage percentage with your contributions.
 

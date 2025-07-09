@@ -91,14 +91,13 @@ This pipeline lets `asmatch` search large datasets in milliseconds while ranking
 
 ```
 asmatch/
-├── src/
-│   └── asmatch/
-│       ├── __init__.py
-│       ├── cli.py
-│       ├── config.py
-│       ├── core.py
-│       ├── database.py
-│       └── models.py
+├── asmatch/
+│   ├── __init__.py
+│   ├── cli.py
+│   ├── config.py
+│   ├── core.py
+│   ├── database.py
+│   └── models.py
 ├── docs/
 |   └── user_stories.md
 ├── tests/
@@ -205,7 +204,7 @@ This project uses `pytest-cov` to measure test coverage. A GitHub Actions workfl
 
 You can run the coverage report locally with:
 ```bash
-poetry run pytest --cov=src/asmatch
+poetry run pytest --cov=asmatch
 ```
 
 ## Advanced Usage
