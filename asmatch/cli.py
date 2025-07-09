@@ -65,12 +65,24 @@ def setup_logging(args: argparse.Namespace) -> None:
 def cmd_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``add`` command."""
     snippet = snippet_add(session, args.name, args.code)
-    if snippet and not args.quiet:
-        logger.info(
-            "Snippet with checksum %s now has names: %s",
-            snippet.checksum,
-            snippet.name_list,
-        )
+    if snippet:
+        if args.json:
+            if not args.quiet:
+                logger.info(
+                    json.dumps(
+                        {
+                            "checksum": snippet.checksum,
+                            "names": snippet.name_list,
+                        },
+                        indent=2,
+                    )
+                )
+        elif not args.quiet:
+            logger.info(
+                "Snippet with checksum %s now has names: %s",
+                snippet.checksum,
+                snippet.name_list,
+            )
 
 
 def cmd_export(args: argparse.Namespace, session: Session, _config: dict) -> None:
@@ -404,12 +416,34 @@ def add_clean_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 def cmd_name_add(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``name add`` command."""
-    snippet_name_add(session, args.checksum, args.name, quiet=args.quiet)
+    snippet = snippet_name_add(session, args.checksum, args.name, quiet=args.quiet)
+    if snippet and args.json:
+        if not args.quiet:
+            logger.info(
+                json.dumps(
+                    {
+                        "checksum": snippet.checksum,
+                        "names": snippet.name_list,
+                    },
+                    indent=2,
+                )
+            )
 
 
 def cmd_name_remove(args: argparse.Namespace, session: Session, _config: dict) -> None:
     """Handle the ``name remove`` command."""
-    snippet_name_remove(session, args.checksum, args.name, quiet=args.quiet)
+    snippet = snippet_name_remove(session, args.checksum, args.name, quiet=args.quiet)
+    if snippet and args.json:
+        if not args.quiet:
+            logger.info(
+                json.dumps(
+                    {
+                        "checksum": snippet.checksum,
+                        "names": snippet.name_list,
+                    },
+                    indent=2,
+                )
+            )
 
 
 def add_name_subparser(subparsers: argparse._SubParsersAction) -> None:
@@ -423,6 +457,9 @@ def add_name_subparser(subparsers: argparse._SubParsersAction) -> None:
     )
     parser_name_add.add_argument("checksum", help="The checksum of the snippet.")
     parser_name_add.add_argument("name", help="The new name for the snippet.")
+    parser_name_add.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
     parser_name_add.set_defaults(func=cmd_name_add)
 
     # Remove name subparser
@@ -431,6 +468,9 @@ def add_name_subparser(subparsers: argparse._SubParsersAction) -> None:
     )
     parser_name_remove.add_argument("checksum", help="The checksum of the snippet.")
     parser_name_remove.add_argument("name", help="The name to remove.")
+    parser_name_remove.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
     parser_name_remove.set_defaults(func=cmd_name_remove)
 
 
@@ -469,6 +509,9 @@ def add_add_subparser(subparsers: argparse._SubParsersAction) -> None:
     )
     parser_add.add_argument("name", help="The name or alias for the snippet.")
     parser_add.add_argument("code", help="The assembly code of the snippet.")
+    parser_add.add_argument(
+        "--json", action="store_true", help="Output results in JSON format."
+    )
     parser_add.set_defaults(func=cmd_add)
 
 
