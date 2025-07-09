@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.venv/
+venv/
+
+# Database
+*.db
+*.sqlite3
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Other
+.DS_Store
+data/
+
+.gemini
+
+# Testing
+.pytest_cache/
+.coverage
+.ruff_cache
+
+# Type hinting
+.mypy_cache/

@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "asmatch"
+version = "0.1.0"
+description = "Assembly Code Similarity Search (asmatch)"
+authors = ["N/A"]
+license = "GPLv3"
+homepage = "https://github.com/maci0/asmatch"
+repository = "https://github.com/maci0/asmatch"
+readme = "README.md"
+packages = [{include = "asmatch", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+sqlmodel = "*"
+pygments = "*"
+datasketch = "*"
+rapidfuzz = "*"
+tomli = "*"
+tomli_w = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+mypy = "*"
+ruff = "*"
+black = "*"
+unittest-xml-reporting = "*"
+pre-commit = "^4.2.0"
+pylint = "^3.3.7"
+pytest-cov = "^6.2.1"
+
+[tool.poetry.scripts]
+asmatch = "asmatch.cli:main"
+
+[tool.ruff]
+line-length = 120
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.ruff.lint]
+# Enable the isort rules.
+select = ["I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["asmatch"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
