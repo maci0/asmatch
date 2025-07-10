@@ -76,4 +76,6 @@ def lsh_cache_invalidate():
     """Delete all cached LSH files."""
     if os.path.exists(CACHE_DIR):
         for f in os.listdir(CACHE_DIR):
-            os.remove(os.path.join(CACHE_DIR, f))
+            path = os.path.join(CACHE_DIR, f)
+            if os.path.isfile(path):
+                os.remove(path)

@@ -148,20 +148,19 @@ asmatch/
 
 ### 1. Installation
 
-This project is managed with [Poetry](https://python-poetry.org/). First, install Poetry if you haven't already. Then, from the root of the project, run:
+This project is managed with [uv](https://github.com/astral-sh/uv). First, install uv if you haven't already. Then, from the root of the project, run:
 
 ```bash
-# 1. Install dependencies
-poetry install
+# 1. Create and activate the virtual environment
+uv venv
+source .venv/bin/activate
 
-# 2. Activate the virtual environment
-poetry shell
+# 2. Install dependencies
+uv pip install -e .[dev]
 
 # 3. (Recommended for developers) Install pre-commit hooks
-poetry run pre-commit install
+uv run pre-commit install
 ```
-
-This will create a virtual environment, install all necessary dependencies, and set up the pre-commit hooks to automatically check your code on every commit.
 
 
 
@@ -186,16 +185,15 @@ You can manage this file with the `asmatch config` command.
 
 ### 3. Usage
 
-The CLI can be invoked through Poetry or by running the module directly after activating the shell.
+The CLI can be invoked through uv or by running the module directly after activating the shell.
 
 **Examples:**
 ```bash
-# Run commands through poetry
-poetry run asmatch add my_memcpy "MOV EAX, EBX; ..."
+# Run commands through uv
+uv run asmatch add my_memcpy "MOV EAX, EBX; ..."
 
-# Or, after running `poetry shell`, you can call it directly
+# Or, after activating the virtual environment, you can call it directly
 asmatch find --query "MOV EAX"
-```
 
 Global options:
 ```
@@ -206,7 +204,7 @@ Global options:
 
 For a detailed breakdown of all commands and features, see the [User Stories](./docs/user_stories.md) or run:
 ```bash
-poetry run asmatch --help
+uv run asmatch --help
 ```
 
 ### 4. Example with test_data
@@ -215,24 +213,24 @@ This is an example of how to import the provided `test_data` and then search for
 
 ```bash
 # import the data
-poetry run asmatch import tests/test_data
+uv run asmatch import tests/test_data
 ```
 
 ```bash
 # search for a snippet
-poetry run asmatch find --threshold 0.2 --query "push esi; mov esi, dword [esp+0CH]; push edi"
+uv run asmatch find --threshold 0.2 --query "push esi; mov esi, dword [esp+0CH]; push edi"
 ```
 
 ```bash
 # search for a function
-poetry run asmatch find --file tests/test_data/1000A0A0.asm
+uv run asmatch find --file tests/test_data/1000A0A0.asm
 ```
 
 ### 5. Running Tests
 
 To ensure everything is working correctly, you can run the test suite using Poetry:
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 #### Code Coverage
@@ -241,7 +239,7 @@ This project uses `pytest-cov` to measure test coverage. A GitHub Actions workfl
 
 You can run the coverage report locally with:
 ```bash
-poetry run pytest --cov=asmatch
+uv run pytest --cov=asmatch
 ```
 
 ## Advanced Usage
@@ -255,7 +253,7 @@ A simple benchmarking script is included to measure the performance of the `impo
 To run the benchmark, execute the following command from the root of the project:
 
 ```bash
-poetry run python tests/benchmark.py
+uv run python tests/benchmark.py
 ```
 
 The script will:
@@ -277,15 +275,15 @@ The `tests/generate_data.py` script can be used to create a large number of rand
 **Usage:**
 ```bash
 # Generate 1000 files in the default 'data/' directory
-poetry run python tests/generate_data.py
+uv run python tests/generate_data.py
 
 # Generate 500 files in a custom directory
-poetry run python tests/generate_data.py --num-files 500 --data-dir custom_data/
+uv run python tests/generate_data.py --num-files 500 --data-dir custom_data/
 ```
 
 You can then import the generated files into `asmatch` using the `import` command:
 ```bash
-poetry run asmatch import data/
+uv run asmatch import data/
 ```
 
 ## Visual Flowcharts

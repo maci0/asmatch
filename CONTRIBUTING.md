@@ -24,7 +24,7 @@ Before you begin, please ensure you have the following software installed on you
 
 - Git
 - Python 3.8 or newer
-- Poetry for dependency and environment management.  
+- uv for dependency and environment management.  
 
 ### One-Time Setup
 Follow these steps to create a local development environment. This workflow uses modern tooling to ensure a consistent and reproducible setup for all contributors.  
@@ -42,20 +42,25 @@ Follow these steps to create a local development environment. This workflow uses
     ```bash
     cd asmatch
     ```
-4.  **Install Dependencies**
-    This command reads the `pyproject.toml` file, creates a dedicated virtual environment for the project, and installs all necessary development and runtime dependencies.
+4.  **Create and Activate the Virtual Environment**
+    This command creates a virtual environment in the `.venv` directory.
     ```bash
-    poetry install
+    uv venv
     ```
-5.  **Activate the Virtual Environment**
-    To start working, activate the virtual environment managed by Poetry. You will need to do this every time you open a new terminal session to work on the project.
+    Activate the virtual environment. You will need to do this every time you open a new terminal session to work on the project.
     ```bash
-    poetry shell
+    source .venv/bin/activate
+    ```
+
+5.  **Install Dependencies**
+    This command reads the `pyproject.toml` file and installs all necessary development and runtime dependencies into the virtual environment.
+    ```bash
+    uv pip install -e .[dev]
     ```
 6.  **Install Pre-Commit Hooks**
     This is a critical step for automating quality checks. This command sets up Git hooks that will automatically run formatters and linters on your code before each commit.
     ```bash
-    poetry run pre-commit install
+    uv run pre-commit install
     ```
 This setup process is designed to "shift quality left," moving the responsibility for basic code health checks from the final review stage to the developer's local machine. The old way involved a contributor manually running a checklist of commands (pytest, mypy, black, etc.), which was error-prone and led to frustrating cycles of CI failures and fixes. The new, automated workflow using pre-commit hooks  ensures that every commit is already vetted for style, formatting, and common errors. This frees the contributor from remembering the checklist and allows the human reviewer to focus on the more important aspects of the change, such as its logic and architecture. This automation transforms quality assurance from a manual chore into an invisible, supportive guardrail, making the contribution process faster and more pleasant for everyone.  
 
@@ -90,13 +95,13 @@ The asmatch project follows a test-driven approach to ensure quality and correct
 
 - **Run Tests Locally:** You can run the full test suite at any time with the following command:
     ```bash
-    poetry run pytest
+    uv run pytest
     ```
     While the pre-commit hook may run tests on changed files, it is good practice to run the entire suite before submitting your work to catch any unintended side effects.
 
 - **Check Test Coverage:** To ensure that your changes are well-tested, you can generate a test coverage report. This project uses `pytest-cov` to measure how much of the codebase is exercised by the tests.
     ```bash
-    poetry run pytest --cov=asmatch
+    uv run pytest --cov=asmatch
     ```
     This command will run the test suite and then print a report to the console, showing the percentage of code covered by tests for each file. Aim to maintain or increase the coverage percentage with your contributions.
 
@@ -104,11 +109,11 @@ The asmatch project follows a test-driven approach to ensure quality and correct
 
     To run a specific fuzzer, execute its script directly. For example, to run the fuzzer for the `get_tokens` function:
     ```bash
-    poetry run ./fuzzers/fuzz_get_tokens.py
+    uv run ./fuzzers/fuzz_get_tokens.py
     ```
     The fuzzer will run indefinitely until you stop it manually (with `Ctrl+C`) or until it finds a crash. To run it for a fixed duration, use the `-max_total_time` flag:
     ```bash
-    poetry run ./fuzzers/fuzz_get_tokens.py -max_total_time=60
+    uv run ./fuzzers/fuzz_get_tokens.py -max_total_time=60
     ```
     If a crash is found, the fuzzer will stop and create a `crash-<hash>` file in the root directory containing the input that caused the failure. This file is crucial for debugging and should be included in any bug report.
 
@@ -218,15 +223,15 @@ Dependencies represent a long-term maintenance cost and security liability. Ther
 
 - **Principle of Parsimony:** Before adding a new dependency, consider if the functionality can be implemented with the existing toolset.
 - **Discussion First:** If you believe a new dependency is necessary, please open an issue first to discuss its purpose, benefits, and potential alternatives with the maintainers.
-- **Adding a Dependency:** If a new dependency is approved, add it to the project using Poetry. Do not manually edit `pyproject.toml`.
+- **Adding a Dependency:** If a new dependency is approved, add it to the project using uv. Do not manually edit `pyproject.toml`.
     ```bash
     # For a runtime dependency
-    poetry add <package-name>
+    uv pip install <package-name>
 
     # For a development-only dependency
-    poetry add --group dev <package-name>
+    uv pip install -e .[dev]
     ```
-Using `poetry add` ensures that both `pyproject.toml` and the `poetry.lock` file are updated correctly, guaranteeing reproducible builds for all contributors.  
+Using `uv` ensures that both `pyproject.toml` is updated correctly, guaranteeing reproducible builds for all contributors.  
 
 ## Part 5: Submitting Your Contribution
 This final part walks you through the process of getting your work reviewed and merged into the project.
@@ -236,7 +241,7 @@ Before opening a pull request, please run through this pre-flight checklist to e
 
 1.  **Run the Full Test Suite:** Ensure all tests pass locally.
     ```bash
-    poetry run pytest
+    uv run pytest
     ```
 2.  **Update Your Branch:** Make sure your branch is up-to-date with the latest changes from the `asmatch` main branch. This helps avoid merge conflicts.
     ```bash
